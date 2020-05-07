@@ -1,2 +1,6 @@
 DEV/
 developer.zip
+*.swp
+__pycache__/
+*.pickle
+document-id-convert.json
