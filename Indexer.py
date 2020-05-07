@@ -11,7 +11,7 @@ from Posting import Posting
 
 class Indexer(object):
 
-    def __init__(self, DEV: str):
+    def __init__(self, DEV: str) -> None:
 
         # If dir not found raise error
         if not os.path.exists(DEV):
@@ -20,7 +20,6 @@ class Indexer(object):
         self.DEV = DEV
         self.corpus = [sub.path for sub in os.scandir(self.DEV) if sub.is_dir()]
 
-        self.corpus = self.corpus[:1] # for testing
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
                             for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
 
@@ -35,9 +34,16 @@ class Indexer(object):
     def index(self) -> None:
         
         docid = 0
+        HashTable = defaultdict(list)
 
         for i, batch in enumerate(self.get_batch()):
-            HashTable = defaultdict(list)
+
+            print('###################################################################')
+            print(f"######################### Batch - {i} ###############################")
+            print('###################################################################')
+            print(f"Batch-{i} has {len(batch)} documents")
+            print()
+
 
             for json_file in batch:
                 docid = docid + 1
@@ -62,8 +68,11 @@ class Indexer(object):
             with open(f"index-{i}.pickle", 'wb') as pickle_file:
                 pickle.dump(HashTable, pickle_file)
 
-            del HashTable
+            HashTable.clear()
             del batch
+
+        print()
+        print(f"Number of documents = {docid}")
 
     def save_document(self, docid: int, url: str) -> None:
         
@@ -84,5 +93,3 @@ class Indexer(object):
             with open('document-id-convert.json', 'w') as json_file:
                 json.dump(convert, json_file)
 
-p = Indexer('DEV')
-p.index()
