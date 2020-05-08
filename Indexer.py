@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 
 from Posting import Posting
+from doc_id_handler import save_documents
 
 class Indexer(object):
 
@@ -22,7 +23,6 @@ class Indexer(object):
 
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
                             for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
-        self.corpus = self.corpus[:10]
 
     def get_batch(self, n_batch=3):
     
@@ -35,7 +35,6 @@ class Indexer(object):
     def index(self) -> None:
         
         docid = 0
-        HashTable = defaultdict(list)
 
         for i, batch in enumerate(self.get_batch()):
 
@@ -44,14 +43,16 @@ class Indexer(object):
             print('###################################################################')
             print(f"Batch-{i} has {len(batch)} documents")
             print()
-
+            
+            HashTable = defaultdict(list)
+            docid_table = {}
 
             for json_file in batch:
-
+                
                 with open(json_file, 'r') as document:
                     data = json.load(document)
 
-                    self.save_document(docid, data['url'])
+                    docid_table[docid] = data["url"]
 
                     tree = BeautifulSoup(data['content'], 'lxml')
                     tokens = [token.lower() for token in word_tokenize(tree.get_text()) if len(token) >= 2]
@@ -60,35 +61,23 @@ class Indexer(object):
                     for token, freq in freq_dist.items():
                         HashTable[token].append(Posting(docid, freq))
 
-                del freq_dist
-                del data
-                docid = docid + 1
+                    # I moved these into the "with" statement because I'm 
+                    # assuming that we don't want to update docid unless
+                    # the file was actually opened
+                    del freq_dist
+                    del data
+                    docid += 1
+
+            save_documents(docid_table)
 
             with open(f"index-{i}.pickle", 'wb') as pickle_file:
                 pickle.dump(HashTable, pickle_file)
 
-            HashTable.clear()
             del batch
+            HashTable.clear()
+            docid_table.clear()
+
+            print(']\n')
 
         print()
         print(f"Number of documents = {docid}")
-
-    def save_document(self, docid: int, url: str) -> None:
-        
-        if not os.path.exists('document-id-convert.json'):
-            with open('document-id-convert.json', 'w') as json_file:
-                json.dump({docid: url}, json_file)
-
-        else:
-
-            with open('document-id-convert.json', 'r') as json_file:
-                convert = json.load(json_file)
-
-            if docid in convert.keys() or url in convert.values():
-                return
-
-            convert.update({docid: url})
-
-            with open('document-id-convert.json', 'w') as json_file:
-                json.dump(convert, json_file)
-
