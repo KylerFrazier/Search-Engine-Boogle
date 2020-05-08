@@ -5,7 +5,7 @@ from merger import merge
 if __name__ == '__main__':
 
     print('kek')
-    indexer = Indexer('Dev')
+    indexer = Indexer('DEV')
     indexer.index()
 
     merge()
