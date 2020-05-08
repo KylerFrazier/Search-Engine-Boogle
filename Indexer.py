@@ -24,6 +24,8 @@ class Indexer(object):
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
                             for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
 
+        print(len(self.corpus))
+        
     def get_batch(self, n_batch=3):
     
         n = int(len(self.corpus) / n_batch)
