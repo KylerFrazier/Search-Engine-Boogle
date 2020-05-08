@@ -36,7 +36,7 @@ class Indexer(object):
         
         docid = 0
 
-        for i, batch in enumerate(self.get_batch()):
+        for i, batch in enumerate(self.get_batch(100)):
 
             print('###################################################################')
             print(f"######################### Batch - {i} ###############################")
@@ -76,8 +76,6 @@ class Indexer(object):
             del batch
             HashTable.clear()
             docid_table.clear()
-
-            print(']\n')
 
         print()
         print(f"Number of documents = {docid}")
