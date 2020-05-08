@@ -22,6 +22,7 @@ class Indexer(object):
 
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
                             for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
+        self.corpus = self.corpus[:10]
 
     def get_batch(self, n_batch=3):
     
@@ -46,7 +47,6 @@ class Indexer(object):
 
 
             for json_file in batch:
-                docid = docid + 1
 
                 with open(json_file, 'r') as document:
                     data = json.load(document)
@@ -57,13 +57,12 @@ class Indexer(object):
                     tokens = [token.lower() for token in word_tokenize(tree.get_text()) if len(token) >= 2]
                     freq_dist = FreqDist(tokens)
 
-                    tokens = set(tokens) # Remove duplicates
-
-                    for token in tokens:
-                        HashTable[token].append(Posting(docid, freq_dist[token]))
+                    for token, freq in freq_dist.items():
+                        HashTable[token].append(Posting(docid, freq))
 
                 del freq_dist
                 del data
+                docid = docid + 1
 
             with open(f"index-{i}.pickle", 'wb') as pickle_file:
                 pickle.dump(HashTable, pickle_file)
