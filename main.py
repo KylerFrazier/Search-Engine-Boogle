@@ -1,6 +1,6 @@
 from Indexer import Indexer
 from merger import merge
-from num_tokens import printNumTokens
+from num_tokens import printNumTokensQuickFix
 from doc_id_handler import initJSON
 
 if __name__ == '__main__':
@@ -11,4 +11,4 @@ if __name__ == '__main__':
     indexer.index()
 
     merge()
-    printNumTokens()
+    print("Number of Tokens =", printNumTokensQuickFix())

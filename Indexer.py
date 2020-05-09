@@ -4,6 +4,7 @@ import pickle
 
 from nltk.tokenize import word_tokenize
 from nltk import FreqDist
+from nltk.stem.snowball import SnowballStemmer # This is Porter2
 from bs4 import BeautifulSoup
 from collections import defaultdict
 
@@ -25,7 +26,7 @@ class Indexer(object):
                             for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
 
         print(len(self.corpus))
-        
+
     def get_batch(self, n_batch=3):
     
         n = int(len(self.corpus) / n_batch)
@@ -36,6 +37,7 @@ class Indexer(object):
 
     def index(self) -> None:
         
+        stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
 
         for i, batch in enumerate(self.get_batch(100)):
@@ -57,15 +59,13 @@ class Indexer(object):
                     docid_table[docid] = data["url"]
 
                     tree = BeautifulSoup(data['content'], 'lxml')
-                    tokens = [token.lower() for token in word_tokenize(tree.get_text()) if len(token) >= 2]
+                    tokens = [stemmer.stem(token) for token in \
+                        word_tokenize(tree.get_text()) if len(token) >= 2]
                     freq_dist = FreqDist(tokens)
 
                     for token, freq in freq_dist.items():
                         HashTable[token].append(Posting(docid, freq))
 
-                    # I moved these into the "with" statement because I'm 
-                    # assuming that we don't want to update docid unless
-                    # the file was actually opened
                     del freq_dist
                     del data
                     docid += 1
