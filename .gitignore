@@ -4,3 +4,7 @@ developer.zip
 __pycache__/
 *.pickle
 document-id-convert.json
+ANALYST/
+analyst.zip
+index.txt
+partial_indexes/
