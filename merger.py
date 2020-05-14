@@ -19,7 +19,6 @@ def merge() -> None:
 
         index1 = partial_index.popleft()
         index2 = partial_index.popleft()
-        print(index1, index2)
 
         with open(index1, 'rb') as file1:
             index1_dict = pickle.load(file1)
