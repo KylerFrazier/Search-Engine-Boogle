@@ -15,5 +15,11 @@ class Posting(object):
         return self.docid
 
     def _get_tfidf(self) -> int:
+        
         return self.tfidf
+
+    # returns a list of strings of the values in the Posting sorted by item name
+    def get_values(self) -> list:
+        
+        return [str(self.__dict__[key]) for key in sorted(self.__dict__.keys())]
 

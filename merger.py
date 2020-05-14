@@ -1,43 +1,84 @@
 import os
-import pickle
 
-from collections import deque
+from collections import defaultdict
+from string import printable
+
+def mergePostings(p1, p2):
+    if int(p1[:p1.index(',')]) < int(p2[:p2.index(',')]):
+        return p1.rstrip('\n') + p2
+    return p2.rstrip('\n') + p1
 
 def merge() -> None:
 
-    partial_index = deque([index for index in os.listdir('.') if index.endswith('.pickle')])
+    # Get's a list of all file names that are partial indexes
+    partial_index_names = {index for index in os.listdir('./partial_indexes') \
+        if index.endswith('.txt') and index[:5] == "index"}
 
-    if 'index.pickle' in partial_index:
-        partial_index.remove('index.pickle')
+    if 'index.txt' in partial_index_names:
+        partial_index_names.remove('index.txt')
 
-    if not os.path.exists('index.pickle'):
-        with open('index.pickle', 'w') as _:
-            pass
+    # Make new file which is the final index
+    with open('index.txt', 'w', encoding="UTF-8") as _:
+        pass
     
-
-    while len(partial_index) != 1:
-
-        index1 = partial_index.popleft()
-        index2 = partial_index.popleft()
-
-        with open(index1, 'rb') as file1:
-            index1_dict = pickle.load(file1)
-
-        with open(index2, 'rb') as file2:
-            index2_dict = pickle.load(file2)
-
-        for token, posting in index2_dict.items():
-            if token in index1_dict.keys():
-                index1_dict[token].extend(posting)
-
-            else:
-                index1_dict.update({token:posting})
-
-        with open('index.pickle', 'wb') as index:
-            pickle.dump(index1_dict, index)
-
-        index1_dict.clear()
-        index2_dict.clear()
-        partial_index.appendleft('index.pickle')
-
-
+    first_letters = sorted(printable)   # Sorted ASCII characters
+    partial_indexes = set()             # Set of all files
+    next_set = set()                    # Stores files that are done per letter
+    last_line = {}                      # Stores the last read line per file
+    
+    # Open all files and put them into partial_indexes
+    for index in partial_index_names:
+        try:
+            opened_index = open("partial_indexes/"+index, "r", encoding="UTF-8")
+            last_line[opened_index] = ""
+            partial_indexes.add(opened_index)
+        except:
+            print(f"{index} could not be opened for merging")
+    
+    # For each character, merge into a buffer then dump the buffer to the file
+    print("Progress bar:\n|" + int(len(first_letters)/2)*"-" + "|\n>", end='')
+    for i, first_letter in enumerate(first_letters):
+        if i%2 == 0: print("=", end='')
+        buffer = {}
+        while len(partial_indexes) != 0:
+            remove_set = set()
+            finished_set = set()
+            for index in partial_indexes:
+                # Read a line if the last line was used
+                if last_line[index] == "":
+                    line = index.readline()
+                    last_line[index] = line
+                else:
+                    line = last_line[index]
+                
+                # Stop this file if EOF or the first char is doesn't match
+                if line == "":
+                    finished_set.add(index)
+                elif line[0] != first_letter:
+                    remove_set.add(index)
+                else:
+                    last_line[index] = ""
+                    colon_i = line.rfind(":")
+                    token, posting = line[:colon_i], line[colon_i+1:]
+                    if token in buffer:
+                        buffer[token] = mergePostings(buffer[token], posting)
+                    else:
+                        buffer[token] = posting
+            
+            # Clean up finished files
+            for index in finished_set:
+                partial_indexes.remove(index)
+                index.close()
+            for index in remove_set:
+                partial_indexes.remove(index)
+                next_set.add(index)
+        
+        # Reset for the next letter and dump content to index.txt
+        partial_indexes = next_set
+        next_set = set()
+        with open("index.txt", 'a', encoding="UTF-8") as index_file:
+            for token, posting in sorted(buffer.items()):
+                index_file.write(f"{token}:{posting}")
+        
+if __name__ == "__main__":
+    merge()
