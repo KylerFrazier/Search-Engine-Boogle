@@ -1,6 +1,5 @@
 import os
 import json
-import pickle
 
 from nltk.tokenize import word_tokenize
 from nltk import FreqDist
@@ -23,9 +22,11 @@ class Indexer(object):
         self.corpus = [sub.path for sub in os.scandir(self.DEV) if sub.is_dir()]
 
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
-                            for json_file in os.listdir(sub) if os.path.isfile(os.path.join(sub, json_file))]
-
-        print(len(self.corpus))
+            for json_file in os.listdir(sub) \
+            if os.path.isfile(os.path.join(sub, json_file))]
+        # FOR TESTING \/ \/ \/ 
+        self.corpus = self.corpus[:10]
+        print("Corpus size:", len(self.corpus))
 
     def get_batch(self, n_batch=3):
     
@@ -40,7 +41,7 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
 
-        for i, batch in enumerate(self.get_batch(100)):
+        for i, batch in enumerate(self.get_batch(2)):
 
             print('###################################################################')
             print(f"######################### Batch - {i} ###############################")
@@ -72,8 +73,7 @@ class Indexer(object):
 
             save_documents(docid_table)
 
-            with open(f"index-{i}.pickle", 'wb') as pickle_file:
-                pickle.dump(HashTable, pickle_file)
+            self.writeIndexToFile(HashTable, i)
 
             del batch
             HashTable.clear()
@@ -81,3 +81,13 @@ class Indexer(object):
 
         print()
         print(f"Number of documents = {docid}")
+
+    def writeIndexToFile(self, HashTable, file_num):
+        with open(f"index-{file_num}.txt", 'w') as text_file:
+            for token in sorted(HashTable):
+                posting_list = HashTable[token]
+                posting_str = f"{token}:"
+                for posting in posting_list:
+                    posting_str += ",".join(posting.get_values()) + ";"
+                text_file.write(posting_str)
+                text_file.write("\n")

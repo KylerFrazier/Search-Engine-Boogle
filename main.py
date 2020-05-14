@@ -10,5 +10,5 @@ if __name__ == '__main__':
     indexer = Indexer('DEV')
     indexer.index()
 
-    merge()
-    print("Number of Tokens =", printNumTokensQuickFix())
+    # merge()
+    # print("Number of Tokens =", printNumTokensQuickFix())
