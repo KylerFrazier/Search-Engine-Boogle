@@ -5,6 +5,7 @@ from doc_id_handler import initJSON
 
 if __name__ == '__main__':
 
+    print()
     initJSON()
 
     print("<<< INDEXING >>>\n")
