@@ -21,12 +21,13 @@ class Indexer(object):
         self.DEV = DEV
         self.corpus = [sub.path for sub in os.scandir(self.DEV) if sub.is_dir()]
 
+        print("Creating corpus\n")
         self.corpus = [os.path.join(sub, json_file) for sub in self.corpus \
             for json_file in os.listdir(sub) \
             if os.path.isfile(os.path.join(sub, json_file))]
         # FOR TESTING \/ \/ \/ 
-        self.corpus = self.corpus[:10]
-        print("Corpus size:", len(self.corpus))
+        self.corpus = self.corpus[:100]
+        print(f"Corpus size:{len(self.corpus)}\n")
 
     def get_batch(self, n_batch=3):
     
@@ -41,11 +42,9 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
 
-        for i, batch in enumerate(self.get_batch(2)):
+        for i, batch in enumerate(self.get_batch(20)):
 
-            print('###################################################################')
-            print(f"######################### Batch - {i} ###############################")
-            print('###################################################################')
+            print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
             print()
             
@@ -79,11 +78,10 @@ class Indexer(object):
             HashTable.clear()
             docid_table.clear()
 
-        print()
-        print(f"Number of documents = {docid}")
+        print(f"Number of documents = {docid}\n")
 
     def writeIndexToFile(self, HashTable, file_num):
-        with open(f"index-{file_num}.txt", 'w') as text_file:
+        with open(f"partial_indexes/index-{file_num}.txt", 'w', encoding="UTF-8") as text_file:
             for token in sorted(HashTable):
                 posting_list = HashTable[token]
                 posting_str = f"{token}:"

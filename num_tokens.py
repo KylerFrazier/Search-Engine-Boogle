@@ -1,20 +1,11 @@
 import pickle
 
-def printNumTokens():
-    with open("index.pickle", "rb") as index_file:
-        hash_table = pickle.load(index_file)
-        print("Number of tokens =", len(hash_table))
-
-def printNumTokensQuickFix():
-    total = set()
-    for i in range(100):
-        print(f"{i}%")
-        with open(f"index-{i}.pickle", "rb") as index_file:
-            hash_table = pickle.load(index_file)
-            for token in hash_table:
-                total.add(token)
-            hash_table.clear()
-    return len(total)
+def getNumTokens():
+    num_tokens = 0
+    with open("index.txt", "r", encoding="UTF-8") as index_file:
+        for _ in index_file:
+            num_tokens += 1
+    return num_tokens
 
 if __name__ == "__main__":
-    print("Number of Tokens =", printNumTokensQuickFix())
+    print("Number of Tokens =", getNumTokens())

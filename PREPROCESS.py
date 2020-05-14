@@ -1,14 +1,16 @@
 from Indexer import Indexer
 from merger import merge
-from num_tokens import printNumTokensQuickFix
+from num_tokens import getNumTokens
 from doc_id_handler import initJSON
 
 if __name__ == '__main__':
 
-    print('kek')
     initJSON()
+
+    print("<<< INDEXING >>>\n")
     indexer = Indexer('DEV')
     indexer.index()
 
-    # merge()
-    # print("Number of Tokens =", printNumTokensQuickFix())
+    print("<<< MERGING >>>\n")
+    merge()
+    print("\nNumber of Tokens =", getNumTokens())
