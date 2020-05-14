@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{title}}</title>
+</head>
+<body>
+  Welcome to {{title}}!! <br>
+  <input type="text", placeholder="search">
+  <input type="submit" value="Submit">
+</body>
+</html>

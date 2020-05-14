@@ -25,10 +25,13 @@ if __name__ == "__main__":
                     break
     
     end_time = time()
+
+    docid = list(hash_map.values())
+    result = set(docid[0]).intersection(*docid)
     
     if len(tokens) > 0:
         print("Query found no matches.")
     else:
-        print(hash_map)
+        print(result)
     
     print(f"\nQuery time = {round(end_time - start_time, 4)} sec\n")
