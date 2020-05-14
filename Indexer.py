@@ -82,7 +82,13 @@ class Indexer(object):
         print(f"Number of documents = {docid}\n")
 
     def writeIndexToFile(self, HashTable, file_num):
-        with open(f"partial_indexes/index-{file_num}.txt", 'w', encoding="UTF-8") as text_file:
+
+        partial_indexes = os.path.join('.', "partial_indexes")
+        
+        if not os.path.exists(partial_indexes):
+            os.mkdir(partial_indexes)
+
+        with open(f"{partial_indexes}/index-{file_num}.txt", 'w', encoding="UTF-8") as text_file:
             for token in sorted(HashTable):
                 posting_list = HashTable[token]
                 posting_str = f"{token}:"
