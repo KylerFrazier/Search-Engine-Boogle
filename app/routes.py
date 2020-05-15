@@ -10,7 +10,14 @@ from QUERY import search
 def index():
 
     title = 'Boogle'
-    text = request.args['query'].split()
 
-    result = search(text)
-    return render_template('index.html', title=title, text=text, result=result)
+    try:
+        query = request.args['query'].split()
+        print(query)
+
+    except:
+        query = ''
+
+    obj = search(query)
+
+    return render_template('index.html', title=title, query=query, obj=obj)
