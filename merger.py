@@ -36,9 +36,10 @@ def merge() -> None:
             print(f"{index} could not be opened for merging")
     
     # For each character, merge into a buffer then dump the buffer to the file
-    print("Progress bar:\n|" + int(len(first_letters)/2)*"-" + "|\n>", end='')
+
     for i, first_letter in enumerate(first_letters):
-        if i%2 == 0: print("=", end='')
+        if i%2 == 0: print(f"Progress: {int(100*i/len(first_letters))}%")
+        print(first_letter)
         buffer = {}
         while len(partial_indexes) != 0:
             remove_set = set()
@@ -79,6 +80,14 @@ def merge() -> None:
         with open("index.txt", 'a', encoding="UTF-8") as index_file:
             for token, posting in sorted(buffer.items()):
                 index_file.write(f"{token}:{posting}")
+        
+        char_indexes = os.path.join('.', "char_indexes")
+        if not os.path.exists(char_indexes):
+            os.mkdir(char_indexes)
+        with open(f"{char_indexes}/index-{i}.txt", 'w', encoding="UTF-8") as index_file:
+            for token, posting in sorted(buffer.items()):
+                index_file.write(f"{token}:{posting}")
+    print("Progress: 100%")
         
 if __name__ == "__main__":
     merge()
