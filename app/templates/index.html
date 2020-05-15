@@ -12,9 +12,18 @@
   Welcome to {{title}}!! <br>
 
   <form action="">
-    <input type="text", name="query" placeholder="search">
+    <input type="text", name="query", placeholder="search">
     <input type="submit" value="Submit">
   </form>
+
+  You just typed {{text}}
+  <br>
+  result is 
+  {% for link in result %}
+  <p>{{link}}</p>
+  {% endfor %}
+  
+<br>
 
 
 </body>
