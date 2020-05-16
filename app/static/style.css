@@ -1,0 +1,181 @@
+body {
+   background: #fafafa;
+   overflow-x: hidden;
+   position: relative;
+ }
+
+ html {
+   height: 100%;
+ } 
+
+ hr {
+   width: 100%;
+   background: #efefef;
+ }
+
+ h1 {
+   font-size: 50px;
+   font-weight: 500;
+ }
+ 
+ h2 {
+   font-size: 43px;
+   font-weight: 500;
+ }
+ 
+ h3 {
+   font-size: 37px;
+   font-weight: 500;
+ }
+ 
+ h4 {
+   font-size: 32px;
+   font-weight: 500;
+ }
+ 
+ h5 {
+   font-size: 26px;
+   font-weight: 500;
+ }
+ 
+ h6 {
+   font-size: 20px;
+   font-weight: 500;
+ }
+ 
+ hr {
+   margin: 0 auto;
+   width: 80%;
+   border-top: 2px solid rgba(0, 0, 0, 0.1) !important;
+   display: block;
+ }
+ 
+ /* Margins & Paddings */
+ .top_15 {
+   margin-top: 15px;
+ }
+ 
+ .top_30 {
+   margin-top: 30px;
+ }
+ 
+ .top_45 {
+   margin-top: 45px;
+ }
+ 
+ .top_60 {
+   margin-top: 60px;
+ }
+ 
+ .top_90 {
+   margin-top: 90px;
+ }
+ 
+ .top_120 {
+   margin-top: 120px;
+ }
+ 
+ .padding_10 {
+   padding-top: 10px;
+ }
+ 
+ .padding_15 {
+   padding-top: 15px;
+ }
+ 
+ .padding_30 {
+   padding-top: 30px;
+ }
+ 
+ .padding_45 {
+   padding-top: 45px;
+ }
+ 
+ .padding_50 {
+   padding-top: 50px;
+ }
+ 
+ .padding_60 {
+   padding-top: 60px;
+ }
+ 
+ .padding_90 {
+   padding-top: 90px;
+ }
+ 
+ .bottom_15 {
+   margin-bottom: 15px;
+ }
+ 
+ .bottom_30 {
+   margin-bottom: 30px;
+ }
+ 
+ .bottom_45 {
+   margin-bottom: 45px;
+ }
+ 
+ .bottom_60 {
+   margin-bottom: 60px;
+ }
+ 
+ .bottom_90 {
+   margin-bottom: 90px;
+ }
+ 
+ .bottom_120 {
+   margin-bottom: 120px;
+ }
+ 
+ .padbot_15 {
+   padding-bottom: 15px;
+ }
+ 
+ .padbot_30 {
+   padding-bottom: 30px;
+ }
+ 
+ .padbot_45 {
+   padding-bottom: 45px;
+ }
+ 
+ .padbot_50 {
+   padding-bottom: 50px;
+ }
+ 
+ .padbot_60 {
+   padding-bottom: 60px;
+ }
+
+ .search-tool {
+    display: block;
+    margin: 0 auto;
+    width: 80%;
+ }
+
+.search-tool form {
+   text-align: center;
+}
+
+ .search-tool input.search {
+    text-align: left;
+    width: 400px !important;
+    height: 30px;
+    font-size: 24px;
+ }
+
+ .search-tool .submit {
+   border-radius: 10%;
+   font-size: 24px;
+   height: 30px;
+ }
+
+ .search-tool .time {
+   text-align: center
+ }
+
+ .search-tool .time p {
+   display: block;
+   color: gray;
+   font-size: 14px;
+ }
