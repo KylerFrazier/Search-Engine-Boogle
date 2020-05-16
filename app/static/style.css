@@ -147,12 +147,20 @@ body {
    padding-bottom: 60px;
  }
 
+.title img{
+  display: block;
+  padding-top: 20vh;
+  padding-bottom: 3vh;
+  margin: 0 auto;
+  text-align: center;
+}
+
  .search-tool {
     display: block;
     margin: 0 auto;
     width: 80%;
  }
-
+ 
 .search-tool form {
    text-align: center;
 }

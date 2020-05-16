@@ -10,7 +10,7 @@ from QUERY import search
 @app.route('/index')
 def index():
 
-    title = 'Boogle'
+    title = "Boogle"
 
     try:
         query = request.args['query'].split()
