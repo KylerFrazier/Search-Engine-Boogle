@@ -2,29 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  {% if title %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css', v=0.01) }}" />
   <title>{{title}}</title>
-  {% else %}
-  <title>Just to get used to the syntax</title>
-  {% endif %}
+
 </head>
 <body>
-  Welcome to {{title}}!! <br>
-
-  <form action="">
-    <input type="text", name="query", placeholder="search">
-    <input type="submit" value="Submit">
-  </form>
-
-  You just typed {{text}}
-  <br>
-  result is 
-  {% for link in result %}
-  <p>{{link}}</p>
-  {% endfor %}
+  <div class="title">
+      <h2 style="text-align: center;">{{title}}</h2>
+  </div>
   
-<br>
+
+  <div class="search-tool">
+    <form class="form">
+
+      {% if query == '' %}
+      <input type="text" name="query" placeholder="search" class="search">
+      {% else %}
+      {% set placeholder = '' %}
+      {% for token in query %}
+      {% set placeholder = placeholder ~ token ~ ', '%}
+      {% endfor %}
+      <input type="text" name="query" placeholder={{placeholder}} class="search">
+      {% endif %}
+
+      <input type="submit" value="Submit" class="submit">
+    </form>
+
+    {% if obj['result'] != "" %}
+
+    <div class="time">
+      <p>({{obj['time']}} seconds)</p>
+    </div>
+
+    {% endif %}
+
+  </div>
+
+  {% if obj['result'] != "" %}
+
+  <div class="result-container">
+
+    {% if obj['result'] == [] %}
+    <p>No result found :(</p>
+
+    {% else %}
+    <ul class="result">
+
+    {% for link in obj['result'] %}
+    <li class="link">
+      <a href="">{{link}}</a>
+    </li>
+    <br>
+    {% endfor %}
+
+    </ul>
+    {% endif %}
+
+  </div>
+  {% endif %}
+  
 
 
 </body>
+
 </html>
