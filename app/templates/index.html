@@ -2,31 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  {% if title %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css', v=0.01) }}" />
   <title>{{title}}</title>
-
-  {% else %}
-  <title>Just to get used to the syntax</title>
-
-  {% endif %}
 
 </head>
 <body>
-  Welcome to {{title}}!! <br>
+  <div class="title">
+      <h2 style="text-align: center;">{{title}}</h2>
+  </div>
+  
 
   <div class="search-tool">
-    <form action="">
+    <form class="form">
 
       {% if query == '' %}
-      <input type="text", name="query", placeholder="search">
-
+      <input type="text" name="query" placeholder="search" class="search">
       {% else %}
-      <input type="text", name="query", placeholder={{' '.join(query)}}>
-
+      {% set placeholder = '' %}
+      {% for token in query %}
+      {% set placeholder = placeholder ~ token ~ ', '%}
+      {% endfor %}
+      <input type="text" name="query" placeholder={{placeholder}} class="search">
       {% endif %}
 
-      <input type="submit" value="Submit">
+      <input type="submit" value="Submit" class="submit">
     </form>
 
     {% if obj['result'] != "" %}
@@ -47,23 +46,19 @@
     <p>No result found :(</p>
 
     {% else %}
-
     <ul class="result">
 
     {% for link in obj['result'] %}
-
     <li class="link">
       <a href="">{{link}}</a>
     </li>
-
+    <br>
     {% endfor %}
 
     </ul>
-
     {% endif %}
 
   </div>
-
   {% endif %}
   
 

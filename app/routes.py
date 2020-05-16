@@ -1,5 +1,6 @@
 from flask import render_template
 from flask import request
+from flask import url_for
 
 from app import app
 
@@ -13,7 +14,6 @@ def index():
 
     try:
         query = request.args['query'].split()
-        print(query)
 
     except:
         query = ''
@@ -21,3 +21,4 @@ def index():
     obj = search(query)
 
     return render_template('index.html', title=title, query=query, obj=obj)
+

@@ -3,17 +3,18 @@ from sys import argv
 from nltk.stem.snowball import SnowballStemmer # This is Porter2
 from string import printable
 
+import json
+
 first_letters = sorted(printable)
 first_letters = {key:value for value, key in enumerate(first_letters)}
 
-def search(query: str) -> dict:
+def search(query: list, k=5) -> dict:
 
     start_time = time()
 
     obj = {}
 
     if len(query) == 0:
-        print("Please provide a query.")
         obj['result'] = ''  
         obj['time'] = 0
         
@@ -23,29 +24,39 @@ def search(query: str) -> dict:
         tokens = {stemmer.stem(token) for token in query}
         hash_map = {}
 
-        with open("index.txt", 'r', encoding="UTF-8") as index:
-            for line in index:
-                token = line[:line.rfind(":")]
-                if token in tokens:
-                    tokens.remove(token)
-                    hash_map[token] = [entry.split(',')[0] for entry in \
-                        line[line.rfind(":")+1:].rstrip(';\n').split(';')]
-                    if len(tokens) == 0:
-                        break
+        for letter in {token[0] for token in tokens}:
+            i = first_letters[letter]
+            with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
+                for line in index:
+                    token = line[:line.rfind(":")]
+                    if token in tokens:
+                        tokens.remove(token)
+                        hash_map[token] = [entry.split(',')[0] for entry in \
+                            line[line.rfind(":")+1:].rstrip(';\n').split(';')]
+                        if len(tokens) == 0:
+                            break
         
         end_time = time()
 
+        obj['result'] = []
+
         docid = list(hash_map.values())
-        result = set(docid[0]).intersection(*docid)
-        result = list(result)
-        
-        if len(tokens) > 0:
-            obj['result'] = []
 
-        else:
-            obj['result'] = result[:5]
+        if docid != []:
+            result = list(set(docid[0]).intersection(*docid))
 
-        obj['time'] = round(end_time - start_time, 4)
+            if len(tokens) == 0:
+                obj['n_documents'] = len(result) 
+
+                with open('./document-id-convert.json', 'r') as json_file:
+
+                    data = json.load(json_file)
+                    
+                    for docid in result[:k]:
+                        url = data[docid]
+                        obj['result'].append(url)
+
+            obj['time'] = round(end_time - start_time, 4)
 
     return obj
 
