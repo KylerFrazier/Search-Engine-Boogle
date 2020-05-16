@@ -13,7 +13,7 @@
   
 
   <div class="search-tool">
-    <form class="form">
+    <form class="form" autocomplete="off">
 
       {% if query == '' %}
       <input type="text" name="query" placeholder="search" class="search">
@@ -22,7 +22,7 @@
       {% for token in query %}
       {% set placeholder = placeholder ~ token ~ ', '%}
       {% endfor %}
-      <input type="text" name="query" placeholder={{placeholder}} class="search">
+      <input type="text" name="query" class="search">
       {% endif %}
 
       <input type="submit" value="Submit" class="submit">
