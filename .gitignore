@@ -10,3 +10,4 @@ index.txt
 partial_indexes/
 .DS_Store
 char_indexes/
+env/
