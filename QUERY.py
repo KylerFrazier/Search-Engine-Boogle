@@ -1,13 +1,13 @@
-# INSTALLATION REQUIREMENTS for pip3:
-#   nltk
-#   bs4
-#   flask
-#   python-dotenv
 # RUNNING AS A WEBAPP:
 #   On most devices, create a virtual environment with: python3 -m venv env
 #   Set up the environment with: env/Scripts/activate
 #   Begin flask with: Flask run
 #   Open a web-browser, and go to "localhost:5000"
+# INSTALLATION REQUIREMENTS through pip3:
+#   nltk
+#   bs4
+#   flask
+#   python-dotenv
 
 from time import time
 from sys import argv
