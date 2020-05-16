@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css', v=0.01) }}" />
-  <title>{{title}}</title>
+  <title>🅱️oogle</title>
 
 </head>
 <body>
   <div class="title">
-      <h2 style="text-align: center;">{{title}}</h2>
+      <!-- <h2 style="text-align: center;">{{title}}</h2> -->
+      <img src="{{ url_for('static', filename='Boogle.png', v=0.01) }}" alt="Boogle" width=15%>
   </div>
   
 
   <div class="search-tool">
-    <form class="form">
+    <form class="form" autocomplete="off">
 
       {% if query == '' %}
       <input type="text" name="query" placeholder="search" class="search">
@@ -22,7 +23,7 @@
       {% for token in query %}
       {% set placeholder = placeholder ~ token ~ ', '%}
       {% endfor %}
-      <input type="text" name="query" placeholder={{placeholder}} class="search">
+      <input type="text" name="query" class="search">
       {% endif %}
 
       <input type="submit" value="Submit" class="submit">
@@ -50,7 +51,7 @@
 
     {% for link in obj['result'] %}
     <li class="link">
-      <a href="">{{link}}</a>
+      <a href="{{link}}">{{link}}</a>
     </li>
     <br>
     {% endfor %}
