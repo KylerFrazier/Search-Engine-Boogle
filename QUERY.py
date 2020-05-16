@@ -1,3 +1,14 @@
+# INSTALLATION REQUIREMENTS for pip3:
+#   nltk
+#   bs4
+#   flask
+#   python-dotenv
+# RUNNING AS A WEBAPP:
+#   On most devices, create a virtual environment with: python3 -m venv env
+#   Set up the environment with: env/Scripts/activate
+#   Begin flask with: Flask run
+#   Open a web-browser, and go to "localhost:5000"
+
 from time import time
 from sys import argv
 from nltk.stem.snowball import SnowballStemmer # This is Porter2
@@ -61,8 +72,9 @@ if __name__ == "__main__":
     for letter in {token[0] for token in tokens}:
         i = first_letters[letter]
         print(i)
-        with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
+        with open(f"char_indexes/index-{i}.txt", 'rb') as index:
             for line in index:
+                line = line.decode("UTF-8")
                 token = line[:line.rfind(":")]
                 if token in tokens:
                     tokens.remove(token)
