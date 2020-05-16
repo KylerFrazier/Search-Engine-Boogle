@@ -13,8 +13,7 @@ def index():
     title = "Boogle"
 
     try:
-        query = request.args['query'].split()
-
+        query = request.args['query']
     except:
         query = ''
 
