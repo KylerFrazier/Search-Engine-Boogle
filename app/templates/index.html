@@ -31,7 +31,7 @@
       <input type="submit" value="Submit" class="submit">
     </form>
 
-    {% if obj['result'] != "" %}
+    {% if obj['result'] not in ["", []] %}
 
     <div class="time">
       <p>({{obj['time']}} seconds)</p>
@@ -46,7 +46,7 @@
   <div class="result-container">
 
     {% if obj['result'] == [] %}
-    <p>No result found :(</p>
+    <p class=no-result>No result found :(</p>
 
     {% else %}
     <ul class="result">

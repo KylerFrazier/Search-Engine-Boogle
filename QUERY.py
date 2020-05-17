@@ -17,6 +17,7 @@ from nltk.stem.snowball import SnowballStemmer # This is Porter2
 from string import printable
 
 import json
+from rank import tfidf
 
 first_letters = sorted(printable)
 first_letters = {key:value for value, key in enumerate(first_letters)}
@@ -44,14 +45,21 @@ def search(query: list, number_of_results=5) -> dict:
                     token = line[:line.rfind(":")]
                     if token in tokens:
                         tokens.remove(token)
-                        hash_map[token] = [entry.split(',')[0] for entry in \
-                            line[line.rfind(":")+1:].rstrip(';\n').split(';')]
+
+                        posting_list = [entry.split(',') for entry in line[line.rfind(':')+1:].rstrip(';\n').split(';')]
+                        posting_list = list(map(lambda posting: (posting[0], posting[1]), posting_list))
+
+                        hash_map[token] = {
+                                'docid': [posting[0] for posting in posting_list], 
+                                'tf': [posting[1] for posting in posting_list]
+                        }
+
                         if len(tokens) == 0:
                             break
         
         obj['result'] = []
 
-        docid = list(hash_map.values())
+        docid = [posting['docid'] for posting in hash_map.values()]
 
         if docid != []:
             result = list(set(docid[0]).intersection(*docid))
@@ -59,13 +67,19 @@ def search(query: list, number_of_results=5) -> dict:
             if len(tokens) == 0:
                 obj['n_documents'] = len(result) 
 
+                score = tfidf(hash_map, result) 
+
                 with open('./document-id-convert.json', 'r') as json_file:
 
                     data = json.load(json_file)
                     
-                    for docid in result[:number_of_results]:
-                        url = data[docid]
+                    for i, docid in enumerate(sorted(score.items(), key=lambda docid: docid[1], reverse=True)):
+                        if i >= number_of_results:
+                            break
+
+                        url = data[docid[0]]
                         obj['result'].append(url)
+
             end_time = time()
             obj['time'] = round(end_time - start_time, 4)
     
