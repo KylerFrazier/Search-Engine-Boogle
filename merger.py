@@ -32,6 +32,7 @@ def merge() -> None:
             opened_index = open("partial_indexes/"+index, "r", encoding="UTF-8")
             last_line[opened_index] = ""
             partial_indexes.add(opened_index)
+            opened_index.close()
         except:
             print(f"{index} could not be opened for merging")
     

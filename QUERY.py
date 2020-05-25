@@ -68,6 +68,7 @@ def search(query: list, number_of_results=5) -> dict:
                 obj['n_documents'] = len(result) 
 
                 score = tfidf(hash_map, result) 
+                print(score)
 
                 with open('./document-id-convert.json', 'r') as json_file:
 
