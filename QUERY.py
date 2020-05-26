@@ -57,6 +57,7 @@ def search(query: str, number_of_results=5) -> dict:
         if docIDs == []:
             return {"result":"", "time":time()-start_time}
         hash_map[token] = docIDs
+        
     # for letter in {token[0] for token in tokens}:
     #     i = first_letters[letter]
     #     with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
