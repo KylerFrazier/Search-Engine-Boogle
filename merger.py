@@ -65,15 +65,21 @@ def mergePostings(postings: set) -> str:
         merged += str(key) + all_ids[key] + ';'
     return merged + "\n"
 
-def dump_to_files(output, txt_file_name, dbm_file_name):
-    with open(txt_file_name, 'a', encoding="UTF-8") as txt_file, \
-        dbm.open(dbm_file_name, 'c') as dbm_file:
+def dump_to_files(output, big_file_name, sub_file_name):
+    sub_path = os.path.join('.', "sub_indexes")
+    
+    if not os.path.exists(sub_path):
+        os.mkdir(sub_path)
+
+    with open(big_file_name, 'a', encoding="UTF-8") as big_file, \
+         open(sub_path+"/"+sub_file_name, 'w', encoding="UTF-8") as sub_file, \
+         dbm.open("meta_index", 'c') as dbm_file:
         
         while not output.empty():
             line = output.get()
-            txt_file.write(line)
-            sep = line.rfind(':')
-            dbm_file[line[:sep]] = line[sep+1:].rstrip(";\n")
+            big_file.write(line)
+            sub_file.write(line)
+        dbm_file[line[:line.rfind(':')]] = sub_path+"/"+sub_file_name
 
 def merge() -> None:
 

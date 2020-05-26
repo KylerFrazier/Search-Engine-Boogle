@@ -13,19 +13,23 @@
 
 from time import time
 from sys import argv
+from string import printable
+import json
+import dbm
+
 from nltk.stem.snowball import SnowballStemmer # This is Porter2
 from nltk.tokenize import word_tokenize
-from string import printable
-
-import json
 
 first_letters = sorted(printable)
 first_letters = {key:value for value, key in enumerate(first_letters)}
 
+def lookUp(token):
+    pass
+
 def search(query: str, number_of_results=5) -> dict:
 
     start_time = time()
-    obj = {}
+    return_dict = {}
     query_tokens = word_tokenize(query)
 
     if len(query_tokens) == 0:
@@ -47,7 +51,7 @@ def search(query: str, number_of_results=5) -> dict:
                     if len(tokens) == 0:
                         break
     
-    obj['result'] = []
+    return_dict['result'] = []
 
     docid = list(hash_map.values())
 
@@ -55,7 +59,7 @@ def search(query: str, number_of_results=5) -> dict:
         result = list(set(docid[0]).intersection(*docid))
 
         if len(tokens) == 0:
-            obj['n_documents'] = len(result) 
+            return_dict['n_documents'] = len(result) 
 
             with open('./document-id-convert.json', 'r') as json_file:
 
@@ -63,14 +67,14 @@ def search(query: str, number_of_results=5) -> dict:
                 
                 for docid in result[:number_of_results]:
                     url = data[docid]
-                    obj['result'].append(url)
+                    return_dict['result'].append(url)
         end_time = time()
-        obj['time'] = round(end_time - start_time, 4)
+        return_dict['time'] = round(end_time - start_time, 4)
     else:
         end_time = time()
-        obj['time'] = round(end_time - start_time, 4)
+        return_dict['time'] = round(end_time - start_time, 4)
     
-    return obj
+    return return_dict
 
 if __name__ == "__main__":
     start_time = time()
