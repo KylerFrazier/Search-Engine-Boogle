@@ -18,6 +18,7 @@ from nltk.tokenize import word_tokenize
 from string import printable
 
 import json
+from rank import tfidf
 
 first_letters = sorted(printable)
 first_letters = {key:value for value, key in enumerate(first_letters)}
@@ -54,21 +55,55 @@ def search(query: str, number_of_results=5) -> dict:
     if docid != []:
         result = list(set(docid[0]).intersection(*docid))
 
-        if len(tokens) == 0:
-            obj['n_documents'] = len(result) 
+        stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
+        tokens = {stemmer.stem(token) for token in query}
+        hash_map = {}
 
-            with open('./document-id-convert.json', 'r') as json_file:
+        for letter in {token[0] for token in tokens}:
+            i = first_letters[letter]
+            with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
+                for line in index:
+                    token = line[:line.rfind(":")]
+                    if token in tokens:
+                        tokens.remove(token)
 
-                data = json.load(json_file)
-                
-                for docid in result[:number_of_results]:
-                    url = data[docid]
-                    obj['result'].append(url)
-        end_time = time()
-        obj['time'] = round(end_time - start_time, 4)
-    else:
-        end_time = time()
-        obj['time'] = round(end_time - start_time, 4)
+                        posting_list = [entry.split(',') for entry in line[line.rfind(':')+1:].rstrip(';\n').split(';')]
+                        posting_list = list(map(lambda posting: (posting[0], posting[1]), posting_list))
+
+                        hash_map[token] = {
+                                'docid': [posting[0] for posting in posting_list], 
+                                'tf': [posting[1] for posting in posting_list]
+                        }
+
+                        if len(tokens) == 0:
+                            break
+        
+        obj['result'] = []
+
+        docid = [posting['docid'] for posting in hash_map.values()]
+
+        if docid != []:
+            result = list(set(docid[0]).intersection(*docid))
+
+            if len(tokens) == 0:
+                obj['n_documents'] = len(result) 
+
+                score = tfidf(hash_map, result) 
+                print(score)
+
+                with open('./document-id-convert.json', 'r') as json_file:
+
+                    data = json.load(json_file)
+                    
+                    for i, docid in enumerate(sorted(score.items(), key=lambda docid: docid[1], reverse=True)):
+                        if i >= number_of_results:
+                            break
+
+                        url = data[docid[0]]
+                        obj['result'].append(url)
+
+            end_time = time()
+            obj['time'] = round(end_time - start_time, 4)
     
     return obj
 
