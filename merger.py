@@ -91,9 +91,10 @@ def merge() -> None:
         partial_index_names.remove('index.txt')
 
     # Make new file which is the final index
-    with open('index.txt', 'w', encoding="UTF-8") as _:
+    with open('index.txt', 'w', encoding="UTF-8") as _, \
+         dbm.open("meta_index", 'n') as _:
         pass
-    
+
     buffer_size = ceil( SIZE_CAP / len(partial_index_names) )
     partial_indexes = set()
 

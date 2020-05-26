@@ -23,8 +23,21 @@ from nltk.tokenize import word_tokenize
 first_letters = sorted(printable)
 first_letters = {key:value for value, key in enumerate(first_letters)}
 
-def lookUp(token):
-    pass
+with dbm.open("meta_index", 'c') as meta_index_file:
+    meta_index = [(key.decode("UTF-8"),meta_index_file[key].decode("UTF-8")) \
+        for key in sorted(meta_index_file)]
+
+def lookUp(query_token):
+    for key, value in meta_index:
+        if query_token <= key:
+            with open(value, 'r', encoding="UTF-8") as index:
+                for line in index:
+                    sep = line.rfind(":")
+                    token = line[:sep]
+                    if token == query_token:
+                        return [entry.split(',')[0] for entry in \
+                            line[line.rfind(":")+1:].rstrip(';\n').split(';')]
+            return []
 
 def search(query: str, number_of_results=5) -> dict:
 
@@ -38,18 +51,23 @@ def search(query: str, number_of_results=5) -> dict:
     stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
     tokens = {stemmer.stem(token) for token in query_tokens}
     hash_map = {}
-
-    for letter in {token[0] for token in tokens}:
-        i = first_letters[letter]
-        with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
-            for line in index:
-                token = line[:line.rfind(":")]
-                if token in tokens:
-                    tokens.remove(token)
-                    hash_map[token] = [entry.split(',')[0] for entry in \
-                        line[line.rfind(":")+1:].rstrip(';\n').split(';')]
-                    if len(tokens) == 0:
-                        break
+    for token in tokens:
+        docIDs = lookUp(token)
+        print(docIDs)
+        if docIDs == []:
+            return {"result":"", "time":time()-start_time}
+        hash_map[token] = docIDs
+    # for letter in {token[0] for token in tokens}:
+    #     i = first_letters[letter]
+    #     with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
+    #         for line in index:
+    #             token = line[:line.rfind(":")]
+    #             if token in tokens:
+    #                 tokens.remove(token)
+    #                 hash_map[token] = [entry.split(',')[0] for entry in \
+    #                     line[line.rfind(":")+1:].rstrip(';\n').split(';')]
+    #                 if len(tokens) == 0:
+    #                     break
     
     return_dict['result'] = []
 
