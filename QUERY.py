@@ -11,6 +11,7 @@
 # RUN IN TERMINAL:
 #   Simply run: python3 Query.py <your query>
 
+from collections import defaultdict
 from time import time
 from sys import argv
 from string import printable
@@ -27,17 +28,19 @@ with dbm.open("meta_index", 'c') as meta_index_file:
     meta_index = [(key.decode("UTF-8"),meta_index_file[key].decode("UTF-8")) \
         for key in sorted(meta_index_file)]
 
-def lookUp(query_token):
-    for key, value in meta_index:
-        if query_token <= key:
-            with open(value, 'r', encoding="UTF-8") as index:
-                for line in index:
-                    sep = line.rfind(":")
-                    token = line[:sep]
-                    if token == query_token:
-                        return [entry.split(',')[0] for entry in \
-                            line[line.rfind(":")+1:].rstrip(';\n').split(';')]
-            return []
+def lookUp(file_name, tokens):
+    with open(file_name, 'r', encoding="UTF-8") as index:
+        hashMap = {}
+        for line in index:
+            sep = line.rfind(":")
+            token = line[:sep]
+            if token in tokens:
+                tokens.remove(token)
+                hashMap[token] = [entry.split(',')[0] for entry in \
+                    line[sep+1:].rstrip(';\n').split(';')]
+                if not tokens:
+                    return hashMap
+    return {}
 
 def search(query: str, number_of_results=5) -> dict:
 
@@ -51,12 +54,24 @@ def search(query: str, number_of_results=5) -> dict:
     stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
     tokens = {stemmer.stem(token) for token in query_tokens}
     hash_map = {}
-    for token in tokens:
-        docIDs = lookUp(token)
-        print(docIDs)
-        if docIDs == []:
+
+    search_files = defaultdict(set)
+    for meta_token, file_name in meta_index:
+        found = False
+        for token in tokens:
+            if token <= meta_token:
+                search_files[file_name].add(token)
+                found = True
+        if found:
+            for token in search_files[file_name]:
+                tokens.remove(token)
+    if tokens:
+        return {"result":"", "time":time()-start_time}
+    for file_name, file_tokens in search_files.items():
+        docIDs = lookUp(file_name, file_tokens)
+        if docIDs == {}:
             return {"result":"", "time":time()-start_time}
-        hash_map[token] = docIDs
+        hash_map.update(docIDs)
         
     # for letter in {token[0] for token in tokens}:
     #     i = first_letters[letter]
@@ -76,7 +91,8 @@ def search(query: str, number_of_results=5) -> dict:
 
     if docid != []:
         result = list(set(docid[0]).intersection(*docid))
-
+        print(result)
+        print(time()-start_time)
         if len(tokens) == 0:
             return_dict['n_documents'] = len(result) 
 

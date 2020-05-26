@@ -6,7 +6,7 @@ from math import ceil
 from collections import defaultdict
 from string import printable
 
-SIZE_CAP = 50000
+SIZE_CAP = 20000
 
 class FileBuffer():
 
