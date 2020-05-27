@@ -12,6 +12,8 @@ from warnings import filterwarnings
 from Posting import Posting
 from doc_id_handler import save_documents
 
+from util import *
+
 class Indexer(object):
 
     def __init__(self, DEV: str) -> None:
@@ -29,6 +31,10 @@ class Indexer(object):
             if os.path.isfile(os.path.join(sub, json_file))]
 
         print(f"Corpus size:{len(self.corpus)}\n")
+
+        # Create directory for finger_prints
+        if not os.path.exists('./finger_prints'):
+            os.mkdir('./finger_prints')
 
     def get_batch(self, n_batch=3):
     
@@ -64,6 +70,10 @@ class Indexer(object):
                     tokens = [stemmer.stem(token) for token in \
                         word_tokenize(tree.get_text())]
                     freq_dist = FreqDist(tokens)
+
+                    finger_print = simhash(freq_dist)
+                    if find_similar(finger_print):
+                        continue
 
                     for token, freq in freq_dist.items():
                         HashTable[token].append(Posting(docid, 1+log10(freq)))

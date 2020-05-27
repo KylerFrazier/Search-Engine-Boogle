@@ -11,3 +11,5 @@ partial_indexes/
 .DS_Store
 char_indexes/
 env/
+finger_prints/
+sub_indexes/
