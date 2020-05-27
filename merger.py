@@ -7,10 +7,7 @@ from collections import defaultdict
 from buffer import ReadBufferWithPosting
 
 SIZE_CAP = 2500
-NUM_DOCS = 50000
-with open("index_info.json", "r") as index_info_file:
-    index_info = json.load(index_info_file)
-    NUM_DOCS = index_info["NUM_DOCS"]
+NUM_DOCS = 0
 
 def mergePostings(postings: set) -> str:
     merged = next(iter(postings)).token + ":"
@@ -41,6 +38,11 @@ def dump_to_files(output, big_file_name, sub_file_name):
         meta_file.write(line[:line.rfind(':')] +"*"+ sub_path+"/"+sub_file_name +"\n")
 
 def merge() -> None:
+    global NUM_DOCS
+
+    with open("index_info.json", "r") as index_info_file:
+        index_info = json.load(index_info_file)
+        NUM_DOCS = index_info["NUM_DOCS"]
 
     # Get's a list of all file names that are partial indexes
     partial_index_names = {index for index in os.listdir('./partial_indexes') \

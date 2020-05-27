@@ -74,7 +74,7 @@ def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
             token = line[:sep]
             if token in tokens:
                 tokens.remove(token)
-                hashMap[token] = [[int(i) for i in entry.split(',')] \
+                hashMap[token] = [[float(i) for i in entry.split(',')] \
                     for entry in line[sep+1:sep2].rstrip(';').split(';')]
                 idfs[token] = float(line[sep2+1:].rstrip())
                 if not tokens:
@@ -143,7 +143,7 @@ def search(query: str, number_of_results=10) -> dict:
     return_dict['n_documents'] = len(result)
     
     for docid in result[:number_of_results]:
-        url = docID_to_URL[str(docid)]
+        url = docID_to_URL[str(int(docid))]
         return_dict['result'].append(url)
     return_dict['time'] = round(time() - start_time, 4)
     
