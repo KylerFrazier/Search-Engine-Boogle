@@ -15,6 +15,7 @@ from collections import defaultdict
 from time import time
 from sys import argv
 from queue import Queue
+from math import log10, sqrt
 import json
 
 from nltk.stem.snowball import SnowballStemmer # This is Porter2
@@ -31,9 +32,10 @@ with open("meta_index.txt", 'r', encoding="UTF-8") as meta_index_file:
 with open('./document-id-convert.json', 'r') as json_file:
     docID_to_URL = json.load(json_file)
 
-def intersectAndRank(hash_map: { str : [ [int] ] } ) -> [int]:
+def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
     i = {token:0 for token in hash_map}
-    ranked = defaultdict(float)
+    vectors = defaultdict(dict)
+    normalize = defaultdict(float)
     done = False
     while not done:
         first_token = next(iter(hash_map))
@@ -47,7 +49,8 @@ def intersectAndRank(hash_map: { str : [ [int] ] } ) -> [int]:
         if in_all:
             for token, postings in hash_map.items():
                 posting = postings[i[token]]
-                ranked[posting[0]] += posting[1]
+                vectors[posting[0]][token] = posting[1]
+                normalize[posting[0]] += posting[1]**2
                 i[token] += 1
                 if i[token] >= len(postings): done = True
         else:
@@ -56,7 +59,11 @@ def intersectAndRank(hash_map: { str : [ [int] ] } ) -> [int]:
                 if docID < max_id:
                     i[token] += 1
                     if i[token] >= len(postings): done = True
-    return sorted(ranked, key = lambda x : -ranked[x])
+    for docID, vector in vectors.items():
+        norm = sqrt(normalize[docID])
+        for token in vector:
+            vector[token] /= norm
+    return vectors
 
 def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
     with open(file_name, 'r', encoding="UTF-8") as index:
@@ -84,7 +91,14 @@ def search(query: str, number_of_results=10) -> dict:
     query_tokens = word_tokenize(query)
     if len(query_tokens) == 0: return {'result' : '', 'time': 0.0}
     stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
-    tokens = {stemmer.stem(token) for token in query_tokens}
+    tokens = set()
+    query_vector = defaultdict(float)
+    for token in query_tokens:
+        t = stemmer.stem(token)
+        tokens.add(t)
+        query_vector[t] += 1
+    
+
 
     # Make a dict of sub_indexes and the query tokens that would be in them
     search_files = defaultdict(set)
@@ -107,9 +121,25 @@ def search(query: str, number_of_results=10) -> dict:
             return {"result":[], "time":time()-start_time}
         hash_map.update(docIDs)
 
-    # Process postings to get final result
+    # Get the tfidf for the query and normalize
+    normalize_query = 0
+    for token, freq in query_vector.items():
+        tfidf = (1 + log10(freq)) * idfs[token]
+        query_vector[token] = tfidf
+        normalize_query += tfidf**2
+    normalize_query = sqrt(normalize_query)
+    for token in query_vector:
+        query_vector[token] /= normalize_query
+
+    # Process all vectors to get final result
     return_dict = {'result' : []}   # { "result" : [URLs] , "time" : time }
-    result = intersectAndRank(hash_map) # Get intersection of ranked IDs
+    vectors = intersectAndMakeVector(hash_map) # Intersect of IDs and vectorize
+    result = defaultdict(float)
+    for docID, vector in vectors.items():
+        for token, tf in vector.items():
+            result[docID] += tf*query_vector[token]
+    result = sorted(result, key = lambda x : result[x])
+            
     return_dict['n_documents'] = len(result)
     
     for docid in result[:number_of_results]:
