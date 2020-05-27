@@ -1,5 +1,6 @@
 import os
 import json
+from math import ceil, log10
 
 from nltk.tokenize import word_tokenize
 from nltk import FreqDist
@@ -52,8 +53,7 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
 
-
-        for i, batch in enumerate(self.get_batch(20)):
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/3000))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
@@ -79,7 +79,7 @@ class Indexer(object):
                         continue
                     
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, freq))
+                        HashTable[token].append(Posting(docid, 1+log10(freq)))
 
                     del freq_dist
                     del data
@@ -94,6 +94,8 @@ class Indexer(object):
             docid_table.clear()
 
         print(f"Number of documents = {docid}\n")
+        with open("index_info.json", "w") as index_info:
+            json.dump({"NUM_DOCS" : docid}, index_info, indent=4)
         return docid
 
     def writeIndexToFile(self, HashTable, file_num):

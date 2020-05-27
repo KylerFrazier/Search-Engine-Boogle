@@ -1,12 +1,44 @@
 import os
-
+import json
+from queue import Queue
+from math import ceil, log10
 from collections import defaultdict
-from string import printable
 
-def mergePostings(p1, p2):
-    if int(p1[:p1.index(',')]) < int(p2[:p2.index(',')]):
-        return p1.rstrip('\n') + p2
-    return p2.rstrip('\n') + p1
+from buffer import ReadBufferWithPosting
+
+SIZE_CAP = 2500
+NUM_DOCS = 50000
+with open("index_info.json", "r") as index_info_file:
+    index_info = json.load(index_info_file)
+    NUM_DOCS = index_info["NUM_DOCS"]
+
+def mergePostings(postings: set) -> str:
+    merged = next(iter(postings)).token + ":"
+    all_ids = {}
+    for posting in postings:
+        all_ids.update(posting.ids)
+    for key in sorted(all_ids):
+        merged += str(key) + all_ids[key] + ';'
+    return merged + "\n"
+
+def dump_to_files(output, big_file_name, sub_file_name):
+    sub_path = os.path.join('.', "sub_indexes")
+    
+    if not os.path.exists(sub_path):
+        os.mkdir(sub_path)
+
+    with open(big_file_name, 'a', encoding="UTF-8") as big_file, \
+         open(sub_path+"/"+sub_file_name, 'w', encoding="UTF-8") as sub_file, \
+         open("meta_index.txt", 'a', encoding="UTF-8") as meta_file:
+        
+        while not output.empty():
+            line = output.get()
+            sep = line.rfind(':')+1
+            line = line.rstrip() + "*" + str( round( log10(
+                NUM_DOCS / line[sep:].count(";") ), 4 ) ) + "\n"
+            big_file.write(line)
+            sub_file.write(line)
+        meta_file.write(line[:line.rfind(':')] +"*"+ sub_path+"/"+sub_file_name +"\n")
 
 def merge() -> None:
 
@@ -18,77 +50,52 @@ def merge() -> None:
         partial_index_names.remove('index.txt')
 
     # Make new file which is the final index
-    with open('index.txt', 'w', encoding="UTF-8") as _:
+    with open('index.txt', 'w', encoding="UTF-8") as _, \
+         open("meta_index.txt", 'w', encoding="UTF-8") as _:
         pass
-    
-    first_letters = sorted(printable)   # Sorted ASCII characters
-    partial_indexes = set()             # Set of all files
-    next_set = set()                    # Stores files that are done per letter
-    last_line = {}                      # Stores the last read line per file
-    
-    # Open all files and put them into partial_indexes
+
+    buffer_size = ceil( SIZE_CAP / len(partial_index_names) )
+    partial_indexes = set()
+
     for index in partial_index_names:
         try:
-            opened_index = open("partial_indexes/"+index, "r", encoding="UTF-8")
-            last_line[opened_index] = ""
+            opened_index = ReadBufferWithPosting("partial_indexes/"+index, buffer_size)
             partial_indexes.add(opened_index)
             opened_index.close()
         except:
             print(f"{index} could not be opened for merging")
-    
-    # For each character, merge into a buffer then dump the buffer to the file
 
-    for i, first_letter in enumerate(first_letters):
-        if i%2 == 0: print(f"Progress: {int(100*i/len(first_letters))}%")
-        print(first_letter)
-        buffer = {}
-        while len(partial_indexes) != 0:
-            remove_set = set()
-            finished_set = set()
-            for index in partial_indexes:
-                # Read a line if the last line was used
-                if last_line[index] == "":
-                    line = index.readline()
-                    last_line[index] = line
-                else:
-                    line = last_line[index]
-                
-                # Stop this file if EOF or the first char is doesn't match
-                if line == "":
-                    finished_set.add(index)
-                elif line[0] != first_letter:
-                    remove_set.add(index)
-                else:
-                    last_line[index] = ""
-                    colon_i = line.rfind(":")
-                    token, posting = line[:colon_i], line[colon_i+1:]
-                    if token in buffer:
-                        buffer[token] = mergePostings(buffer[token], posting)
-                    else:
-                        buffer[token] = posting
-            
-            # Clean up finished files
-            for index in finished_set:
-                partial_indexes.remove(index)
-                index.close()
-            for index in remove_set:
-                partial_indexes.remove(index)
-                next_set.add(index)
+    output = Queue(SIZE_CAP)
+    file_num = 0
+
+    while partial_indexes:
         
-        # Reset for the next letter and dump content to index.txt
-        partial_indexes = next_set
-        next_set = set()
-        with open("index.txt", 'a', encoding="UTF-8") as index_file:
-            for token, posting in sorted(buffer.items()):
-                index_file.write(f"{token}:{posting}")
-        
-        char_indexes = os.path.join('.', "char_indexes")
-        if not os.path.exists(char_indexes):
-            os.mkdir(char_indexes)
-        with open(f"{char_indexes}/index-{i}.txt", 'w', encoding="UTF-8") as index_file:
-            for token, posting in sorted(buffer.items()):
-                index_file.write(f"{token}:{posting}")
-    print("Progress: 100%")
-        
+        # Get a set of indexes that are on the lowest ordered string
+        lowest = next(iter(partial_indexes)).token
+        lowest_set = set()
+        for index in partial_indexes:
+            if index.token < lowest:
+                lowest = index.token
+                lowest_set.clear()
+                lowest_set.add(index)
+            elif index.token == lowest:
+                lowest_set.add(index)
+
+        # Merge postings and add to output buffer
+        output.put(mergePostings(lowest_set))
+        for index in lowest_set:
+            index.readline()
+
+        # Remove indexes that fully read
+        done = {index for index in partial_indexes if index.line == ""}
+        for index in done: partial_indexes.remove(index)
+
+        # Once the queue is full, dump to file
+        if output.full():
+            dump_to_files(output, "index.txt", f"index-{file_num}.txt")
+            file_num += 1
+    
+    dump_to_files(output, "index.txt", f"index-{file_num}.txt")
+
 if __name__ == "__main__":
     merge()
