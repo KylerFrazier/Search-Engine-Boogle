@@ -1,11 +1,10 @@
-import np
 
 class Posting(object):
 
-    def __init__(self, docid: int, tf: tf):
+    def __init__(self, docid, tfidf):
 
         self.docid = docid
-        self.tf = 1 + np.log(tf) 
+        self.tfidf = tfidf
 
     def __str__(self):
         
@@ -15,9 +14,9 @@ class Posting(object):
 
         return self.docid
 
-    def _get_tf(self) -> int:
+    def _get_tfidf(self) -> int:
         
-        return self.tf
+        return self.tfidf
 
     # returns a list of strings of the values in the Posting sorted by item name
     def get_values(self) -> list:

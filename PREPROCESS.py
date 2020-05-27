@@ -1,7 +1,7 @@
 from Indexer import Indexer
 from merger import merge
 from num_tokens import getNumTokens
-from util import *
+from doc_id_handler import initJSON
 
 if __name__ == '__main__':
 

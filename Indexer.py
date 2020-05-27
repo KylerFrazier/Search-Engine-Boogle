@@ -1,5 +1,6 @@
 import os
 import json
+from math import ceil, log10
 
 from nltk.tokenize import word_tokenize
 from nltk import FreqDist
@@ -9,8 +10,7 @@ from collections import defaultdict
 from warnings import filterwarnings
 
 from Posting import Posting
-
-from util import *
+from doc_id_handler import save_documents
 
 class Indexer(object):
 
@@ -30,14 +30,6 @@ class Indexer(object):
 
         print(f"Corpus size:{len(self.corpus)}\n")
 
-        # Create directory for partial indexes
-        if not os.path.exists('./partial_indexes'):
-            os.mkdir('./partial_indexes')
-
-        # Create directory for finger_prints
-        if not os.path.exists('./finger_prints'):
-            os.mkdir('./finger_prints')
-
     def get_batch(self, n_batch=3):
     
         n = int(len(self.corpus) / n_batch)
@@ -46,14 +38,13 @@ class Indexer(object):
 
         yield self.corpus[n * (n_batch - 1):]
 
-    def index(self) -> int:
+    def index(self) -> None:
         
         filterwarnings("ignore", category=UserWarning, module='bs4')
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
 
-
-        for i, batch in enumerate(self.get_batch(20)):
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/3000))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
@@ -74,12 +65,8 @@ class Indexer(object):
                         word_tokenize(tree.get_text())]
                     freq_dist = FreqDist(tokens)
 
-                    finger_print = simhash(freq_dist)
-                    if find_similar(finger_print):
-                        continue
-                    
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, freq))
+                        HashTable[token].append(Posting(docid, 1+log10(freq)))
 
                     del freq_dist
                     del data
@@ -94,13 +81,17 @@ class Indexer(object):
             docid_table.clear()
 
         print(f"Number of documents = {docid}\n")
-        return docid
+        with open("index_info.json", "w") as index_info:
+            json.dump({"NUM_DOCS" : docid}, index_info, indent=4)
 
     def writeIndexToFile(self, HashTable, file_num):
 
-        partial_indexes = os.path.join('.', "partial_indexes", f"index-{file_num}.txt")
+        partial_indexes = os.path.join('.', "partial_indexes")
+        
+        if not os.path.exists(partial_indexes):
+            os.mkdir(partial_indexes)
 
-        with open(partial_indexes, 'w', encoding="UTF-8") as text_file:
+        with open(f"{partial_indexes}/index-{file_num}.txt", 'w', encoding="UTF-8") as text_file:
             for token in sorted(HashTable):
                 posting_list = HashTable[token]
                 posting_str = f"{token}:"
