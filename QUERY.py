@@ -14,47 +14,79 @@
 from collections import defaultdict
 from time import time
 from sys import argv
-from string import printable
+from queue import Queue
 import json
-import dbm
 
 from nltk.stem.snowball import SnowballStemmer # This is Porter2
 from nltk.tokenize import word_tokenize
 
-first_letters = sorted(printable)
-first_letters = {key:value for value, key in enumerate(first_letters)}
+meta_index = [] # [(token, file)]
+with open("meta_index.txt", 'r', encoding="UTF-8") as meta_index_file:
+    for line in meta_index_file:
+        line = line.rstrip()
+        if line != "":
+            sep = line.rfind('*')
+            meta_index.append( ( line[:sep] , line[sep+1:] ) )
 
-with dbm.open("meta_index", 'c') as meta_index_file:
-    meta_index = [(key.decode("UTF-8"),meta_index_file[key].decode("UTF-8")) \
-        for key in sorted(meta_index_file)]
+with open('./document-id-convert.json', 'r') as json_file:
+    docID_to_URL = json.load(json_file)
 
-def lookUp(file_name, tokens):
+def intersectAndRank(hash_map: { str : [ [int] ] } ) -> [int]:
+    i = {token:0 for token in hash_map}
+    ranked = defaultdict(float)
+    done = False
+    while not done:
+        first_token = next(iter(hash_map))
+        max_id = hash_map[first_token][i[first_token]][0]
+        in_all = True
+        for token, postings in hash_map.items():
+            docID = postings[i[token]][0]
+            if docID != max_id:
+                if docID > max_id: max_id = docID
+                in_all = False
+        if in_all:
+            for token, postings in hash_map.items():
+                posting = postings[i[token]]
+                ranked[posting[0]] += posting[1]
+                i[token] += 1
+                if i[token] >= len(postings): done = True
+        else:
+            for token, postings in hash_map.items():
+                docID = postings[i[token]][0]
+                if docID < max_id:
+                    i[token] += 1
+                    if i[token] >= len(postings): done = True
+    return sorted(ranked, key = lambda x : -ranked[x])
+
+def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
     with open(file_name, 'r', encoding="UTF-8") as index:
         hashMap = {}
         for line in index:
             sep = line.rfind(":")
+            sep2 = line.rfind("*")
             token = line[:sep]
             if token in tokens:
                 tokens.remove(token)
-                hashMap[token] = [entry.split(',')[0] for entry in \
-                    line[sep+1:].rstrip(';\n').split(';')]
+                hashMap[token] = [[int(i) for i in entry.split(',')] \
+                    for entry in line[sep+1:sep2].rstrip(';').split(';')]
+                idfs[token] = float(line[sep2+1:].rstrip())
                 if not tokens:
                     return hashMap
     return {}
 
-def search(query: str, number_of_results=5) -> dict:
+def search(query: str, number_of_results=10) -> dict:
 
     start_time = time()
-    return_dict = {}
-    query_tokens = word_tokenize(query)
+    hash_map = {}       # { token : [docIDs] }
+    idfs = {}           # { token : idf }
 
-    if len(query_tokens) == 0:
-        return {'result' : '', 'time': 0.0}
-    
+    # Process Query
+    query_tokens = word_tokenize(query)
+    if len(query_tokens) == 0: return {'result' : '', 'time': 0.0}
     stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
     tokens = {stemmer.stem(token) for token in query_tokens}
-    hash_map = {}
 
+    # Make a dict of sub_indexes and the query tokens that would be in them
     search_files = defaultdict(set)
     for meta_token, file_name in meta_index:
         found = False
@@ -66,52 +98,28 @@ def search(query: str, number_of_results=5) -> dict:
             for token in search_files[file_name]:
                 tokens.remove(token)
     if tokens:
-        return {"result":"", "time":time()-start_time}
-    for file_name, file_tokens in search_files.items():
-        docIDs = lookUp(file_name, file_tokens)
-        if docIDs == {}:
-            return {"result":"", "time":time()-start_time}
-        hash_map.update(docIDs)
-        
-    # for letter in {token[0] for token in tokens}:
-    #     i = first_letters[letter]
-    #     with open(f"char_indexes/index-{i}.txt", 'r', encoding="UTF-8") as index:
-    #         for line in index:
-    #             token = line[:line.rfind(":")]
-    #             if token in tokens:
-    #                 tokens.remove(token)
-    #                 hash_map[token] = [entry.split(',')[0] for entry in \
-    #                     line[line.rfind(":")+1:].rstrip(';\n').split(';')]
-    #                 if len(tokens) == 0:
-    #                     break
+        return {"result":[], "time":time()-start_time}
     
-    return_dict['result'] = []
+    # Look for the postings in the sub_indexes and update the hash_map
+    for file_name, file_tokens in search_files.items():
+        docIDs = lookUp(file_name, file_tokens, idfs)
+        if docIDs == {}:
+            return {"result":[], "time":time()-start_time}
+        hash_map.update(docIDs)
 
-    docid = list(hash_map.values())
-
-    if docid != []:
-        result = list(set(docid[0]).intersection(*docid))
-        print(result)
-        print(time()-start_time)
-        if len(tokens) == 0:
-            return_dict['n_documents'] = len(result) 
-
-            with open('./document-id-convert.json', 'r') as json_file:
-
-                data = json.load(json_file)
-                
-                for docid in result[:number_of_results]:
-                    url = data[docid]
-                    return_dict['result'].append(url)
-        end_time = time()
-        return_dict['time'] = round(end_time - start_time, 4)
-    else:
-        end_time = time()
-        return_dict['time'] = round(end_time - start_time, 4)
+    # Process postings to get final result
+    return_dict = {'result' : []}   # { "result" : [URLs] , "time" : time }
+    result = intersectAndRank(hash_map) # Get intersection of ranked IDs
+    return_dict['n_documents'] = len(result)
+    
+    for docid in result[:number_of_results]:
+        url = docID_to_URL[str(docid)]
+        return_dict['result'].append(url)
+    return_dict['time'] = round(time() - start_time, 4)
     
     return return_dict
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     start_time = time()
 
     if len(argv) == 1:

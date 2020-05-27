@@ -1,6 +1,6 @@
 import os
 import json
-from math import ceil
+from math import ceil, log10
 
 from nltk.tokenize import word_tokenize
 from nltk import FreqDist
@@ -66,7 +66,7 @@ class Indexer(object):
                     freq_dist = FreqDist(tokens)
 
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, freq))
+                        HashTable[token].append(Posting(docid, 1+log10(freq)))
 
                     del freq_dist
                     del data
@@ -81,6 +81,8 @@ class Indexer(object):
             docid_table.clear()
 
         print(f"Number of documents = {docid}\n")
+        with open("index_info.json", "w") as index_info:
+            json.dump({"NUM_DOCS" : docid}, index_info, indent=4)
 
     def writeIndexToFile(self, HashTable, file_num):
 

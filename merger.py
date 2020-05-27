@@ -1,60 +1,16 @@
 import os
-import dbm
+import json
 from queue import Queue
-from math import ceil
-
+from math import ceil, log10
 from collections import defaultdict
-from string import printable
 
-SIZE_CAP = 20000
+from buffer import ReadBufferWithPosting
 
-class FileBuffer():
-
-    def __init__(self, file_name, size):
-        self.file = open(file_name, "r", encoding="UTF-8")
-        self.buffer = Queue(size)
-        self.size = size
-        self.empty = False
-        self.done = False
-        self.line = ""
-        self.token = ""
-        self.ids = {}
-        self.readline()
-
-    def readline(self):
-        if self.done: return self.setInfo("")
-        if self.empty:
-            if not self.buffer.empty(): return self.setInfo(self.buffer.get())
-            self.done = True
-            return self.setInfo("")
-        if self.buffer.empty():
-            self.fillBuffer()
-            if self.buffer.empty(): return self.setInfo("")
-        return self.setInfo(self.buffer.get())
-    
-    def setInfo(self, line):
-        self.line = line
-        if line == "":
-            self.token = ""
-            self.ids.clear()
-        else:
-            sep = line.rfind(':')
-            self.token = line[:sep]
-            self.ids.clear()
-            for posting in line[sep+1:].rstrip(";\n").split(";"):
-                id_sep = posting.find(",")
-                self.ids[int(posting[:id_sep])] = posting[id_sep:]
-
-        return line
-    
-    def fillBuffer(self):
-        for _ in range(self.size):
-            line = self.file.readline()
-            if line == "":
-                self.empty = True
-                self.file.close()
-                break
-            self.buffer.put(line)
+SIZE_CAP = 2500
+NUM_DOCS = 50000
+with open("index_info.json", "r") as index_info_file:
+    index_info = json.load(index_info_file)
+    NUM_DOCS = index_info["NUM_DOCS"]
 
 def mergePostings(postings: set) -> str:
     merged = next(iter(postings)).token + ":"
@@ -73,13 +29,16 @@ def dump_to_files(output, big_file_name, sub_file_name):
 
     with open(big_file_name, 'a', encoding="UTF-8") as big_file, \
          open(sub_path+"/"+sub_file_name, 'w', encoding="UTF-8") as sub_file, \
-         dbm.open("meta_index", 'c') as dbm_file:
+         open("meta_index.txt", 'a', encoding="UTF-8") as meta_file:
         
         while not output.empty():
             line = output.get()
+            sep = line.rfind(':')+1
+            line = line.rstrip() + "*" + str( round( log10(
+                NUM_DOCS / line[sep:].count(";") ), 4 ) ) + "\n"
             big_file.write(line)
             sub_file.write(line)
-        dbm_file[line[:line.rfind(':')]] = sub_path+"/"+sub_file_name
+        meta_file.write(line[:line.rfind(':')] +"*"+ sub_path+"/"+sub_file_name +"\n")
 
 def merge() -> None:
 
@@ -92,7 +51,7 @@ def merge() -> None:
 
     # Make new file which is the final index
     with open('index.txt', 'w', encoding="UTF-8") as _, \
-         dbm.open("meta_index", 'n') as _:
+         open("meta_index.txt", 'w', encoding="UTF-8") as _:
         pass
 
     buffer_size = ceil( SIZE_CAP / len(partial_index_names) )
@@ -100,7 +59,7 @@ def merge() -> None:
 
     for index in partial_index_names:
         try:
-            opened_index = FileBuffer("partial_indexes/"+index, buffer_size)
+            opened_index = ReadBufferWithPosting("partial_indexes/"+index, buffer_size)
             partial_indexes.add(opened_index)
         except:
             print(f"{index} could not be opened for merging")
