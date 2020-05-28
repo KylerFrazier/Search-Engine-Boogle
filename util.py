@@ -1,7 +1,7 @@
 import hashlib
 import os
 
-def simhash(word_frequencies: list, n_bits=256) -> str: 
+def simhash(word_frequencies: dict, n_bits=256) -> str: 
     
     hash_list = []
     simhash = []
@@ -40,6 +40,10 @@ def simhash(word_frequencies: list, n_bits=256) -> str:
 
     return simhash
 
+def find_duplicate(hash1: str, hash2: str) -> bool:
+    if hash1 == hash2: print("DUPLICATE FOUND")
+    return hash1 == hash2
+
 def find_similar(finger_print: str, n=6, threshold=0.93) -> bool:
 
     msb = finger_print[:n]
@@ -50,10 +54,10 @@ def find_similar(finger_print: str, n=6, threshold=0.93) -> bool:
 
     else:
         with open(f'./finger_prints/fp-{msb}.txt', 'r') as f:
-            while True:
-                fp = f.readline()
-                if not fp:
-                    break
+            for fp in f:
+                
+                if find_duplicate(fp, finger_print): return True
+                
                 sim = sum(1 for bit in range(len(finger_print)) if finger_print[bit] == fp[bit])
                 if sim / len(finger_print) > threshold:
                     return True
