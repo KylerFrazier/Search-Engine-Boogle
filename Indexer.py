@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 from math import ceil, log10
 
@@ -14,6 +15,7 @@ from doc_id_handler import save_documents
 
 from util import simhash, find_similar
 
+MAX_DOCS = 1000
 special_tag_weights = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
 special_tags = [key for key in special_tag_weights]
 
@@ -36,8 +38,9 @@ class Indexer(object):
         print(f"Corpus size: {len(self.corpus)}\n")
 
         # Create directory for finger_prints
-        if not os.path.exists('./finger_prints'):
-            os.mkdir('./finger_prints')
+        if os.path.exists('./finger_prints'):
+            shutil.rmtree('./finger_prints')
+        os.mkdir('./finger_prints')
 
     def get_batch(self, n_batch=3):
     
@@ -53,7 +56,7 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
         
-        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/1000))):
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/MAX_DOCS))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
@@ -89,10 +92,9 @@ class Indexer(object):
                     for special in tree.findAll(special_tags):
                         previous = ""
 
-                        text = word_tokenize(str(special.string))
-
                         # Update single token
-                        for token in text:
+                        for token in word_tokenize(str(special.string)):
+                            token = stemmer.stem(token)
                             weight = special_tag_weights[special.name]
                             freq_dist[token] += weight
                             if previous:
@@ -100,12 +102,14 @@ class Indexer(object):
                             previous = token
 
                     # Add URLs
-                    freq_dist[data['url']] += 1
+                    for token in word_tokenize(data["url"]):
+                        freq_dist[stemmer.stem(token)] += 15
                     for anchor in tree.findAll('a', href=True):
-                        freq_dist[anchor['href']] += 1
+                        for token in word_tokenize(anchor['href']):
+                            freq_dist[stemmer.stem(token)] += 1
 
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, 1+log10(freq)))
+                        HashTable[token].append(Posting(docid, round(1+log10(freq), 5)))
 
                     del freq_dist
                     del data
