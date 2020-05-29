@@ -73,6 +73,7 @@ class Indexer(object):
                     freq_dist = defaultdict(int)
                     positions = {}
                     previous = ""
+
                     for pos, token in enumerate(word_tokenize(tree.get_text())):
                         token = stemmer.stem(token)
                         freq_dist[token] += 1
@@ -82,10 +83,30 @@ class Indexer(object):
                             positions[previous + " " + token] = pos-1
                         previous = token
 
-
                     finger_print = simhash(freq_dist)
                     if find_similar(finger_print):
                         continue
+
+                    # Add more weights to special tags
+                    special_tags = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
+
+                    for tag, weight in special_tags.items():
+                        for special in tree.findAll(tag):
+                            previous = ""
+
+                            text = word_tokenize(special.string)
+
+                            # Update single token
+                            for token in text:
+                                freq_dist[token] += weight
+                                if previous:
+                                    freq_dist[previous + " " + token] += weight
+                                previous = token
+
+                    # Add URLs
+                    freq_dist[data['url']] += 1
+                    for anchor in tree.findAll('a', href=True):
+                        freq_dist[anchor['href']] += 1
 
                     for token, freq in freq_dist.items():
                         HashTable[token].append(Posting(docid, 1+log10(freq), positions[token]))
