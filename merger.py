@@ -28,14 +28,16 @@ def dump_to_files(output, big_file_name, sub_file_name):
          open(sub_path+"/"+sub_file_name, 'w', encoding="UTF-8") as sub_file, \
          open("meta_index.txt", 'a', encoding="UTF-8") as meta_file:
         
+        line = ''
         while not output.empty():
             line = output.get()
             sep = line.rfind(':')+1
             line = line.rstrip() + "*" + str( round( log10(
-                NUM_DOCS / line[sep:].count(";") ), 4 ) ) + "\n"
+                NUM_DOCS / line[sep:].count(";") ), 5 ) ) + "\n"
             big_file.write(line)
             sub_file.write(line)
-        meta_file.write(line[:line.rfind(':')] +"*"+ sub_path+"/"+sub_file_name +"\n")
+        if line:
+            meta_file.write(line[:line.rfind(':')] +"*"+ sub_path+"/"+sub_file_name +"\n")
 
 def merge() -> None:
     global NUM_DOCS
