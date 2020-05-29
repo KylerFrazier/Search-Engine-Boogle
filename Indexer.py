@@ -53,7 +53,7 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
         
-        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/3000))):
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/1000))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
