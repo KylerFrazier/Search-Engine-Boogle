@@ -44,7 +44,7 @@ def find_duplicate(hash1: str, hash2: str) -> bool:
     if hash1 == hash2: print("DUPLICATE FOUND")
     return hash1 == hash2
 
-def find_similar(finger_print: str, n=6, threshold=0.93) -> bool:
+def find_similar(finger_print: str, n=6, threshold=0.90) -> bool:
 
     msb = finger_print[:n]
 
