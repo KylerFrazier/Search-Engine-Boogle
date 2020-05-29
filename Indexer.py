@@ -72,16 +72,13 @@ class Indexer(object):
                     tree = BeautifulSoup(data['content'], 'lxml')
                     
                     freq_dist = defaultdict(int)
-                    positions = {}
                     previous = ""
 
-                    for pos, token in enumerate(word_tokenize(tree.get_text())):
+                    for token in word_tokenize(tree.get_text()):
                         token = stemmer.stem(token)
                         freq_dist[token] += 1
-                        positions[token] = pos
                         if previous:
                             freq_dist[previous + " " + token] += 1
-                            positions[previous + " " + token] = pos-1
                         previous = token
 
                     finger_print = simhash(freq_dist)
@@ -108,7 +105,7 @@ class Indexer(object):
                         freq_dist[anchor['href']] += 1
 
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, 1+log10(freq), positions[token]))
+                        HashTable[token].append(Posting(docid, 1+log10(freq)))
 
                     del freq_dist
                     del data

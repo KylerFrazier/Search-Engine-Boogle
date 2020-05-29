@@ -1,7 +1,7 @@
 
 class Posting(object):
 
-    def __init__(self, docid, tfidf, pos):
+    def __init__(self, docid, tfidf, pos = 0):
 
         self.docid = docid
         self.tfidf = tfidf
