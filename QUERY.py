@@ -137,8 +137,8 @@ def search(query: str, number_of_results=10) -> dict:
     normalize_query = sqrt(normalize_query)
     for token in query_vector:
         query_vector[token] /= normalize_query
-    print("Query vector:")
-    print(query_vector)
+    # print("Query vector:")
+    # print(query_vector)
 
     # Process all vectors to get final result
     return_dict = {'result' : []}   # { "result" : [URLs] , "time" : time }
@@ -148,13 +148,13 @@ def search(query: str, number_of_results=10) -> dict:
         for token, tf in vector.items():
             scores[docID] += tf*query_vector[token]
     result = sorted(scores, key = lambda x : -scores[x])
-    if 7327 in scores:
-        print("\nExpected Top Result Score")
-        print(vectors[7327])
-        print(scores[7327])
-        print("\nActual Top Result Score")
-        print(vectors[result[0]])
-        print(scores[result[0]])
+    # if 7327 in scores:
+        # print("\nExpected Top Result Score")
+        # print(vectors[7327])
+        # print(scores[7327])
+    # print("\nActual Top Result Score")
+    # print(vectors[result[0]])
+    # print(scores[result[0]])
             
     return_dict['n_documents'] = len(result)
     

@@ -14,6 +14,9 @@ from doc_id_handler import save_documents
 
 from util import simhash, find_similar
 
+special_tag_weights = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
+special_tags = [key for key in special_tag_weights]
+
 class Indexer(object):
 
     def __init__(self, DEV: str) -> None:
@@ -30,7 +33,7 @@ class Indexer(object):
             for json_file in os.listdir(sub) \
             if os.path.isfile(os.path.join(sub, json_file))]
 
-        print(f"Corpus size:{len(self.corpus)}\n")
+        print(f"Corpus size: {len(self.corpus)}\n")
 
         # Create directory for finger_prints
         if not os.path.exists('./finger_prints'):
@@ -49,8 +52,8 @@ class Indexer(object):
         filterwarnings("ignore", category=UserWarning, module='bs4')
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
-
-        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/3000))):
+        
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/1000))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
@@ -67,20 +70,15 @@ class Indexer(object):
                     docid_table[docid] = data["url"]
 
                     tree = BeautifulSoup(data['content'], 'lxml')
-                    # tokens = [stemmer.stem(token) for token in \
-                    #     word_tokenize(tree.get_text())]
-                    # freq_dist = FreqDist(tokens)
+                    
                     freq_dist = defaultdict(int)
-                    positions = {}
                     previous = ""
 
-                    for pos, token in enumerate(word_tokenize(tree.get_text())):
+                    for token in word_tokenize(tree.get_text()):
                         token = stemmer.stem(token)
                         freq_dist[token] += 1
-                        positions[token] = pos
                         if previous:
                             freq_dist[previous + " " + token] += 1
-                            positions[previous + " " + token] = pos-1
                         previous = token
 
                     finger_print = simhash(freq_dist)
@@ -88,20 +86,18 @@ class Indexer(object):
                         continue
 
                     # Add more weights to special tags
-                    special_tags = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
+                    for special in tree.findAll(special_tags):
+                        previous = ""
 
-                    for tag, weight in special_tags.items():
-                        for special in tree.findAll(tag):
-                            previous = ""
+                        text = word_tokenize(str(special.string))
 
-                            text = word_tokenize(special.string)
-
-                            # Update single token
-                            for token in text:
-                                freq_dist[token] += weight
-                                if previous:
-                                    freq_dist[previous + " " + token] += weight
-                                previous = token
+                        # Update single token
+                        for token in text:
+                            weight = special_tag_weights[special.name]
+                            freq_dist[token] += weight
+                            if previous:
+                                freq_dist[previous + " " + token] += weight
+                            previous = token
 
                     # Add URLs
                     freq_dist[data['url']] += 1
@@ -109,7 +105,7 @@ class Indexer(object):
                         freq_dist[anchor['href']] += 1
 
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, 1+log10(freq), positions[token]))
+                        HashTable[token].append(Posting(docid, 1+log10(freq)))
 
                     del freq_dist
                     del data
