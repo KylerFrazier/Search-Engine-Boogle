@@ -94,6 +94,7 @@ class Indexer(object):
                         for special in tree.findAll(tag):
                             previous = ""
 
+                            print(special)
                             text = word_tokenize(special.string)
 
                             # Update single token
