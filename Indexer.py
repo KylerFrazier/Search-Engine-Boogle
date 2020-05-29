@@ -12,7 +12,7 @@ from warnings import filterwarnings
 from Posting import Posting
 from doc_id_handler import save_documents
 
-from util import *
+from util import simhash, find_similar
 
 class Indexer(object):
 
@@ -54,8 +54,8 @@ class Indexer(object):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
-            print()
-            
+            starting_docID = docid
+
             HashTable = defaultdict(list)
             docid_table = {}
 
@@ -67,16 +67,49 @@ class Indexer(object):
                     docid_table[docid] = data["url"]
 
                     tree = BeautifulSoup(data['content'], 'lxml')
-                    tokens = [stemmer.stem(token) for token in \
-                        word_tokenize(tree.get_text())]
-                    freq_dist = FreqDist(tokens)
+                    # tokens = [stemmer.stem(token) for token in \
+                    #     word_tokenize(tree.get_text())]
+                    # freq_dist = FreqDist(tokens)
+                    freq_dist = defaultdict(int)
+                    positions = {}
+                    previous = ""
+
+                    for pos, token in enumerate(word_tokenize(tree.get_text())):
+                        token = stemmer.stem(token)
+                        freq_dist[token] += 1
+                        positions[token] = pos
+                        if previous:
+                            freq_dist[previous + " " + token] += 1
+                            positions[previous + " " + token] = pos-1
+                        previous = token
 
                     finger_print = simhash(freq_dist)
                     if find_similar(finger_print):
                         continue
 
+                    # Add more weights to special tags
+                    special_tags = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
+
+                    for tag, weight in special_tags.items():
+                        for special in tree.findAll(tag):
+                            previous = ""
+
+                            text = word_tokenize(special.string)
+
+                            # Update single token
+                            for token in text:
+                                freq_dist[token] += weight
+                                if previous:
+                                    freq_dist[previous + " " + token] += weight
+                                previous = token
+
+                    # Add URLs
+                    freq_dist[data['url']] += 1
+                    for anchor in tree.findAll('a', href=True):
+                        freq_dist[anchor['href']] += 1
+
                     for token, freq in freq_dist.items():
-                        HashTable[token].append(Posting(docid, 1+log10(freq)))
+                        HashTable[token].append(Posting(docid, 1+log10(freq), positions[token]))
 
                     del freq_dist
                     del data
@@ -89,6 +122,9 @@ class Indexer(object):
             del batch
             HashTable.clear()
             docid_table.clear()
+
+            print(f"Batch-{i} added {docid - starting_docID} documents")
+            print()
 
         print(f"Number of documents = {docid}\n")
         with open("index_info.json", "w") as index_info:

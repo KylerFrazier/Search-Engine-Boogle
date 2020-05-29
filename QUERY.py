@@ -93,10 +93,17 @@ def search(query: str, number_of_results=10) -> dict:
     stemmer = SnowballStemmer("english") # NOTE: ASSUMING QUERY IS IN ENGLISH
     tokens = set()
     query_vector = defaultdict(float)
+    previous = ""
     for token in query_tokens:
         t = stemmer.stem(token)
         tokens.add(t)
         query_vector[t] += 1
+        if previous:
+            twoGram = previous + " " + t
+            tokens.add(twoGram)
+            query_vector[twoGram] += 10
+        previous = t
+
     
 
 
@@ -130,21 +137,30 @@ def search(query: str, number_of_results=10) -> dict:
     normalize_query = sqrt(normalize_query)
     for token in query_vector:
         query_vector[token] /= normalize_query
+    print("Query vector:")
+    print(query_vector)
 
     # Process all vectors to get final result
     return_dict = {'result' : []}   # { "result" : [URLs] , "time" : time }
     vectors = intersectAndMakeVector(hash_map) # Intersect of IDs and vectorize
-    result = defaultdict(float)
+    scores = defaultdict(float)
     for docID, vector in vectors.items():
         for token, tf in vector.items():
-            result[docID] += tf*query_vector[token]
-    result = sorted(result, key = lambda x : result[x])
+            scores[docID] += tf*query_vector[token]
+    result = sorted(scores, key = lambda x : -scores[x])
+    if 7327 in scores:
+        print("\nExpected Top Result Score")
+        print(vectors[7327])
+        print(scores[7327])
+        print("\nActual Top Result Score")
+        print(vectors[result[0]])
+        print(scores[result[0]])
             
     return_dict['n_documents'] = len(result)
     
     for docid in result[:number_of_results]:
         url = docID_to_URL[str(int(docid))]
-        return_dict['result'].append(url)
+        return_dict['result'].append(url) # +"\n\tScore: "+str(scores[docid])
     return_dict['time'] = round(time() - start_time, 4)
     
     return return_dict
