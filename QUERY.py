@@ -32,8 +32,11 @@ with open("meta_index.txt", 'r', encoding="UTF-8") as meta_index_file:
 with open('./document-id-convert.json', 'r') as json_file:
     docID_to_URL = json.load(json_file)
 
-def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
+# Returns the a dictionary of docIDs and their respective token vectors
+#   after intersecting for all unary tokens, and 2grams when possible
+def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> dict:
     i = {token:0 for token in hash_map}
+    is_2gram = {token:True if " " in token else False for token in hash_map}
     vectors = defaultdict(dict)
     normalize = defaultdict(float)
     done = False
@@ -43,31 +46,44 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
         in_all = True
         for token, postings in hash_map.items():
             docID = postings[i[token]][0]
-            if docID != max_id:
-                if docID > max_id: max_id = docID
+            if docID < max_id:
+                in_all = False
+            if docID > max_id and not is_2gram[token]:
+                max_id = docID
                 in_all = False
         if in_all:
             for token, postings in hash_map.items():
                 posting = postings[i[token]]
-                vectors[posting[0]][token] = posting[1]
-                normalize[posting[0]] += posting[1]**2
+                docID = posting[0]
+                tf = posting[1] if docID == max_id else 0
+                vectors[max_id][token] = tf
+                normalize[max_id] += tf**2
                 i[token] += 1
                 if i[token] >= len(postings): done = True
         else:
+            done_2grams = []
             for token, postings in hash_map.items():
-                docID = postings[i[token]][0]
-                if docID < max_id:
+                while postings[i[token]][0] < max_id:
                     i[token] += 1
-                    if i[token] >= len(postings): done = True
-    for docID, vector in vectors.items():
-        norm = sqrt(normalize[docID])
-        for token in vector:
-            vector[token] /= norm
+                    if i[token] >= len(postings): 
+                        if is_2gram[token]:
+                            done_2grams.append(token)
+                        else:
+                            done = True
+                        break
+            for token in done_2grams:
+                hash_map.pop(token)
+    #for docID, vector in vectors.items():
+        #norm = sqrt(normalize[docID])
+        #for token in vector:
+            #vector[token] /= norm
     return vectors
 
+# Go through a sub-index and check for the tokens that might be in it
+#   If there are missing 2grams, still allow the query to continue
 def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
+    hashMap = {}
     with open(file_name, 'r', encoding="UTF-8") as index:
-        hashMap = {}
         for line in index:
             sep = line.rfind(":")
             sep2 = line.rfind("*")
@@ -79,7 +95,12 @@ def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
                 idfs[token] = float(line[sep2+1:].rstrip())
                 if not tokens:
                     return hashMap
-    return {}
+    for token in tokens:
+        if " " not in token:
+            return {}
+        idfs[token] = 0
+        hashMap[token] = [[-1,0]]
+    return hashMap
 
 def search(query: str, number_of_results=10) -> dict:
 
@@ -137,8 +158,6 @@ def search(query: str, number_of_results=10) -> dict:
     normalize_query = sqrt(normalize_query)
     for token in query_vector:
         query_vector[token] /= normalize_query
-    # print("Query vector:")
-    # print(query_vector)
 
     # Process all vectors to get final result
     return_dict = {'result' : []}   # { "result" : [URLs] , "time" : time }
@@ -148,19 +167,12 @@ def search(query: str, number_of_results=10) -> dict:
         for token, tf in vector.items():
             scores[docID] += tf*query_vector[token]
     result = sorted(scores, key = lambda x : -scores[x])
-    # if 7327 in scores:
-        # print("\nExpected Top Result Score")
-        # print(vectors[7327])
-        # print(scores[7327])
-    # print("\nActual Top Result Score")
-    # print(vectors[result[0]])
-    # print(scores[result[0]])
             
     return_dict['n_documents'] = len(result)
     
     for docid in result[:number_of_results]:
         url = docID_to_URL[str(int(docid))]
-        return_dict['result'].append(url) # +"\n\tScore: "+str(scores[docid])
+        return_dict['result'].append(url +"\n\tScore: "+str(scores[docid]))
     return_dict['time'] = round(time() - start_time, 4)
     
     return return_dict

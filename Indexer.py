@@ -16,7 +16,8 @@ from doc_id_handler import save_documents
 from util import simhash, find_similar
 
 MAX_DOCS = 1000
-special_tag_weights = {'title': 3, 'h1': 2, 'h2': 1, 'h3': 1, 'b': 2, 'strong': 2}
+special_tag_weights = {'title': 3, 'h1': 2, 'h2': 1, 'h3': 1, 'b': 1, 'strong': 1}
+URL_WEIGHT = 3
 special_tags = [key for key in special_tag_weights]
 
 class Indexer(object):
@@ -103,7 +104,7 @@ class Indexer(object):
 
                     # Add URLs
                     for token in word_tokenize(data["url"]):
-                        freq_dist[stemmer.stem(token)] += 3
+                        freq_dist[stemmer.stem(token)] += URL_WEIGHT
                     for anchor in tree.findAll('a', href=True):
                         for token in word_tokenize(anchor['href']):
                             freq_dist[stemmer.stem(token)] += 1
