@@ -60,11 +60,18 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
                 i[token] += 1
                 if i[token] >= len(postings): done = True
         else:
+            done_2grams = []
             for token, postings in hash_map.items():
-                docID = postings[i[token]][0]
-                if docID < max_id:
+                while postings[i[token]][0] < max_id:
                     i[token] += 1
-                    if i[token] >= len(postings): done = True
+                    if i[token] >= len(postings): 
+                        if is_2gram[token]:
+                            done_2grams.append(token)
+                        else:
+                            done = True
+                        break
+            for token in done_2grams:
+                hash_map.pop(token)
     for docID, vector in vectors.items():
         norm = sqrt(normalize[docID])
         for token in vector:
@@ -72,8 +79,8 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
     return vectors
 
 def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
+    hashMap = {}
     with open(file_name, 'r', encoding="UTF-8") as index:
-        hashMap = {}
         for line in index:
             sep = line.rfind(":")
             sep2 = line.rfind("*")
@@ -85,7 +92,13 @@ def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
                 idfs[token] = float(line[sep2+1:].rstrip())
                 if not tokens:
                     return hashMap
-    return {}
+    only_2grams = True
+    for token in tokens:
+        if " " not in token:
+            return {}
+        idfs[token] = 0
+        hashMap[token] = [[-1,0]]
+    return hashMap
 
 def search(query: str, number_of_results=10) -> dict:
 
