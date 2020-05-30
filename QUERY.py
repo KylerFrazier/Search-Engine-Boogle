@@ -34,6 +34,7 @@ with open('./document-id-convert.json', 'r') as json_file:
 
 def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
     i = {token:0 for token in hash_map}
+    is_2gram = {token:True if " " in token else False for token in hash_map}
     vectors = defaultdict(dict)
     normalize = defaultdict(float)
     done = False
@@ -43,14 +44,19 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
         in_all = True
         for token, postings in hash_map.items():
             docID = postings[i[token]][0]
-            if docID != max_id:
-                if docID > max_id: max_id = docID
+            if docID < max_id:
+                in_all = False
+            if docID > max_id and not is_2gram[token]:
+                max_id = docID
                 in_all = False
         if in_all:
             for token, postings in hash_map.items():
                 posting = postings[i[token]]
-                vectors[posting[0]][token] = posting[1]
-                normalize[posting[0]] += posting[1]**2
+                docID = posting[0]
+                tf = posting[1] if docID == max_id else 0
+                if tf == 0: print("Test: ", max_id, token)
+                vectors[max_id][token] = tf
+                normalize[max_id] += tf**2
                 i[token] += 1
                 if i[token] >= len(postings): done = True
         else:
