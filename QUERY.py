@@ -73,10 +73,10 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> dict:
                         break
             for token in done_2grams:
                 hash_map.pop(token)
-    for docID, vector in vectors.items():
-        norm = sqrt(normalize[docID])
-        for token in vector:
-            vector[token] /= norm
+    # for docID, vector in vectors.items():
+    #     norm = sqrt(normalize[docID])
+    #     for token in vector:
+    #         vector[token] /= norm
     return vectors
 
 # Go through a sub-index and check for the tokens that might be in it
@@ -174,7 +174,7 @@ def search(query: str, number_of_results=10) -> dict:
     
     for docid in result[:number_of_results]:
         url = docID_to_URL[str(int(docid))]
-        return_dict['result'].append(url) # +"\n\tScore: "+str(scores[docid])
+        return_dict['result'].append(url) # +"\n\tScore: "+str(scores[docid]) 
     return_dict['time'] = round(time() - start_time, 4)
     
     return return_dict
