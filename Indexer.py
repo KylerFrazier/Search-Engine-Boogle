@@ -15,7 +15,8 @@ from doc_id_handler import save_documents
 
 from util import simhash, find_similar
 
-special_tag_weights = {'title': 15, 'h1': 10, 'h2': 8, 'h3': 6, 'b': 5, 'strong': 5}
+MAX_DOCS = 1000
+special_tag_weights = {'title': 3, 'h1': 2, 'h2': 1, 'h3': 1, 'b': 2, 'strong': 2}
 special_tags = [key for key in special_tag_weights]
 
 class Indexer(object):
@@ -55,7 +56,7 @@ class Indexer(object):
         stemmer = SnowballStemmer("english") # NOTE: ASSUMING LANG IS ENGLISH
         docid = 0
         
-        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/1000))):
+        for i, batch in enumerate(self.get_batch(ceil(len(self.corpus)/MAX_DOCS))):
 
             print(f"==================== Batch - {i} ====================")
             print(f"Batch-{i} has {len(batch)} documents")
@@ -91,10 +92,8 @@ class Indexer(object):
                     for special in tree.findAll(special_tags):
                         previous = ""
 
-                        text = word_tokenize(str(special.string))
-
                         # Update single token
-                        for token in text:
+                        for token in word_tokenize(str(special.string)):
                             token = stemmer.stem(token)
                             weight = special_tag_weights[special.name]
                             freq_dist[token] += weight
@@ -103,9 +102,11 @@ class Indexer(object):
                             previous = token
 
                     # Add URLs
-                    freq_dist[stemmer.stem(data['url'])] += 15
+                    for token in word_tokenize(data["url"]):
+                        freq_dist[stemmer.stem(token)] += 3
                     for anchor in tree.findAll('a', href=True):
-                        freq_dist[stemmer.stem(anchor['href'])] += 1
+                        for token in word_tokenize(anchor['href']):
+                            freq_dist[stemmer.stem(token)] += 1
 
                     for token, freq in freq_dist.items():
                         HashTable[token].append(Posting(docid, round(1+log10(freq), 5)))

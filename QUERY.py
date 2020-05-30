@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
     results = search(query)
     
-    print(f"\n                  ({results['time']} seconds)\n")
+    print(f"\n                  ({round(results['time'], 4)} seconds)\n")
     if len(results['result']) == 0:
         print(f"No results were found for \"{query}\".\n")
     else:
