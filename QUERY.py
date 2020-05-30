@@ -32,7 +32,9 @@ with open("meta_index.txt", 'r', encoding="UTF-8") as meta_index_file:
 with open('./document-id-convert.json', 'r') as json_file:
     docID_to_URL = json.load(json_file)
 
-def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
+# Returns the a dictionary of docIDs and their respective token vectors
+#   after intersecting for all unary tokens, and 2grams when possible
+def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> dict:
     i = {token:0 for token in hash_map}
     is_2gram = {token:True if " " in token else False for token in hash_map}
     vectors = defaultdict(dict)
@@ -77,6 +79,8 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
             vector[token] /= norm
     return vectors
 
+# Go through a sub-index and check for the tokens that might be in it
+#   If there are missing 2grams, still allow the query to continue
 def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
     hashMap = {}
     with open(file_name, 'r', encoding="UTF-8") as index:
@@ -91,7 +95,6 @@ def lookUp(file_name: str, tokens: set, idfs: dict) -> { str : [ [int] ] } :
                 idfs[token] = float(line[sep2+1:].rstrip())
                 if not tokens:
                     return hashMap
-    only_2grams = True
     for token in tokens:
         if " " not in token:
             return {}
@@ -166,13 +169,6 @@ def search(query: str, number_of_results=10) -> dict:
         for token, tf in vector.items():
             scores[docID] += tf*query_vector[token]
     result = sorted(scores, key = lambda x : -scores[x])
-    # if 7327 in scores:
-        # print("\nExpected Top Result Score")
-        # print(vectors[7327])
-        # print(scores[7327])
-    # print("\nActual Top Result Score")
-    # print(vectors[result[0]])
-    # print(scores[result[0]])
             
     return_dict['n_documents'] = len(result)
     
