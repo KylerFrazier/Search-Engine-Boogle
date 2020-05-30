@@ -54,7 +54,6 @@ def intersectAndMakeVector(hash_map: { str : [ [int] ] } ) -> [int]:
                 posting = postings[i[token]]
                 docID = posting[0]
                 tf = posting[1] if docID == max_id else 0
-                if tf == 0: print("Test: ", max_id, token)
                 vectors[max_id][token] = tf
                 normalize[max_id] += tf**2
                 i[token] += 1
